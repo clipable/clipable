@@ -31,4 +31,22 @@ type ObjectStore interface {
 	PutObject(id string, r io.Reader, size int64) error
 	GetObject(id string) (io.ReadCloser, error)
 	DeleteObject(id string) error
+	HasObject(id string) bool
+}
+
+// NewGroup Comment for linter
+type Clips interface {
+	Find(ctx context.Context, cid string) (*models.Clip, error)
+	FindMany(ctx context.Context, mods ...qm.QueryMod) (models.ClipSlice, error)
+	Exists(ctx context.Context, cid string) (bool, error)
+
+	SearchMany(ctx context.Context, query string) (models.ClipSlice, error)
+
+	Update(ctx context.Context, clip *models.Clip, columns boil.Columns) error
+	Create(ctx context.Context, clip *models.Clip, columns boil.Columns) (ClipTx, error)
+}
+
+type ClipTx interface {
+	Commit() error
+	Rollback() error
 }

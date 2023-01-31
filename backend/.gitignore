@@ -1,0 +1,12 @@
+.netrc
+.env
+config.yml
+auth.config.yml
+docs/
+.idea/
+.vscode
+certs/
+docs/swagger-codegen/.swagger-codegen/VERSION
+pumba
+_test-data/
+.DS_Store

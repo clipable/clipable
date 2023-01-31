@@ -25,7 +25,7 @@ type UserValidator struct {
 // De/Serializer cases
 var (
 	UserSerializeSelf UserSerialize = MakeCodec("self-out")
-	UserSerializeUser UserSerialize = MakeCodec("user-out")
+	UserSerializeUser UserSerialize = MakeCodec("out")
 
 	UserDeserializeSelf UserDeserialize = MakeCodec("self-in")
 
@@ -34,13 +34,13 @@ var (
 
 // User objects represent user accounts
 type User struct {
-	ID        string      `validateedit:"-"                      self-in:"-"            self-out:"id"                 user-out:"id"`
-	Username  null.String `validateedit:"omitempty,min=2,max=64" self-in:"username"     self-out:"username,omitempty" user-out:"username,omitempty"`
-	Email     string      `validateedit:"-"                      self-in:"-"            self-out:"email,omitempty"    user-out:"email,omitempty"`
-	Firstname string      `validateedit:"-"                      self-in:"-"            self-out:"firstName"          user-out:"firstName"`
-	Lastname  string      `validateedit:"-"                      self-in:"-"            self-out:"lastName"           user-out:"lastName"`
-	Online    bool        `validateedit:"-"                      self-in:"online"       self-out:"online"             user-out:"online"`
-	Phone     null.String `validateedit:"-"                      self-in:"phone"        self-out:"phone,omitempty"    user-out:"phone,omitempty"`
+	ID        string      `validateedit:"-"                      self-in:"-"            self-out:"id"                 out:"id"`
+	Username  null.String `validateedit:"omitempty,min=2,max=64" self-in:"username"     self-out:"username,omitempty" out:"username,omitempty"`
+	Email     string      `validateedit:"-"                      self-in:"-"            self-out:"email,omitempty"    out:"email,omitempty"`
+	Firstname string      `validateedit:"-"                      self-in:"-"            self-out:"firstName"          out:"firstName"`
+	Lastname  string      `validateedit:"-"                      self-in:"-"            self-out:"lastName"           out:"lastName"`
+	Online    bool        `validateedit:"-"                      self-in:"online"       self-out:"online"             out:"online"`
+	Phone     null.String `validateedit:"-"                      self-in:"phone"        self-out:"phone,omitempty"    out:"phone,omitempty"`
 }
 
 // ToModel converts a modelsx.User object to a model.User object

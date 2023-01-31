@@ -1,0 +1,130 @@
+package modelsx
+
+import (
+	"io"
+	"net/http"
+	"time"
+
+	"webserver/models"
+
+	. "github.com/docker/go-units"
+)
+
+// De/Serializer cases
+var (
+	ClipSerialize = MakeCodec("out")
+
+	ClipDeserialize = MakeCodec("in")
+
+	ClipValidate = makeValidator("validate")
+)
+
+// Clip objects represent Clip accounts
+type Clip struct {
+	ID          string    `validate:"-"              in:"-"           out:"id"             `
+	Title       string    `validate:"min=2,max=64"   in:"title"       out:"title"          `
+	Description string    `validate:"min=0,max=1024" in:"description" out:"email,omitempty"`
+	CreatedAt   time.Time `validate:"-"              in:"-"           out:"created_at"     `
+
+	Creator *User `validate:"-" in:"-" out:"creator"`
+}
+
+// ToModel converts a modelsx.Clip object to a model.Clip object
+func (u *Clip) ToModel() *models.Clip {
+	return &models.Clip{
+		ID:          u.ID,
+		Title:       u.Title,
+		Description: u.Description,
+		CreatedAt:   u.CreatedAt,
+	}
+}
+
+// Send marshals a modelsx.Clip object into a sendable json byte array
+func (u *Clip) Marshal() (int, []byte, error) {
+	data, err := ClipSerialize.Marshal(u)
+	code := http.StatusOK
+
+	if err != nil {
+		code = http.StatusInternalServerError
+	}
+
+	return code, data, err
+}
+
+// GetUpdateWhitelist returns a list of fields from a Clip object that are valid
+func (u *Clip) GetUpdateWhitelist() []string {
+	nonNullFields := make([]string, 0)
+
+	if u.Title != "" {
+		nonNullFields = append(nonNullFields, models.ClipColumns.Title)
+	}
+
+	if u.Description != "" {
+		nonNullFields = append(nonNullFields, models.ClipColumns.Description)
+	}
+
+	return nonNullFields
+}
+
+// ClipFromModel converts a models.Clip object into a modelsx.Clip object
+func ClipFromModel(u *models.Clip) *Clip {
+	Clip := &Clip{
+		ID:          u.ID,
+		Title:       u.Title,
+		Description: u.Description,
+		CreatedAt:   u.CreatedAt,
+	}
+
+	if u.R != nil {
+		Clip.Creator = UserFromModel(u.R.Creator)
+	}
+
+	return Clip
+}
+
+// ParseClip parses a Clip object out of a client request
+func ParseClip(req io.Reader) (*Clip, error) {
+	data, err := io.ReadAll(io.LimitReader(req, 2*KB))
+
+	if err != nil {
+		return nil, err
+	}
+
+	a := &Clip{}
+
+	if err := ClipDeserialize.Unmarshal(data, a); err != nil {
+		return nil, err
+	}
+
+	if err := ClipValidate.Struct(a); err != nil {
+		return nil, handleValidationError(err)
+	}
+
+	return a, nil
+}
+
+// ClipArray is a helper type representing an array of Clip objects
+type ClipArray []*Clip
+
+// Send converts a ClipArray into a sendable json byte array
+func (aa ClipArray) Marshal() (int, []byte, error) {
+	data, err := ClipSerialize.Marshal(aa)
+	code := http.StatusOK
+
+	if err != nil {
+		code = http.StatusInternalServerError
+	}
+
+	return code, data, err
+}
+
+// ClipFromModelBatch converts multiple models.Clip into a modelsx.ClipArray
+func ClipFromModelBatch(model ...*models.Clip) ClipArray {
+	var apts ClipArray
+
+	for _, m := range model {
+		apts = append(apts, ClipFromModel(m))
+	}
+
+	return apts
+}

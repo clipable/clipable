@@ -30,3 +30,8 @@ func (s *store) GetObject(id string) (io.ReadCloser, error) {
 func (s *store) DeleteObject(id string) error {
 	return s.s3.RemoveObject(context.Background(), s.bucketName, id, minio.RemoveObjectOptions{})
 }
+
+func (s *store) HasObject(id string) bool {
+	_, err := s.s3.StatObject(context.Background(), s.bucketName, id, minio.GetObjectOptions{})
+	return err != nil
+}
