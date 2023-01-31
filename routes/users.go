@@ -1,0 +1,114 @@
+package routes
+
+import (
+	"database/sql"
+	"net/http"
+	"webserver/models"
+	"webserver/modelsx"
+
+	"github.com/volatiletech/sqlboiler/v4/boil"
+)
+
+// UpdateUser updates a user
+//
+// Success when provided valid User json; returns updated User json
+// Normal users can only update themselves
+//
+// PATCH /users/{user id}
+func (r *Routes) UpdateUser(user *models.User, req *http.Request) (int, []byte, error) {
+	vars := vars(req)
+
+	// Users shouldn't be able to update another users
+	if vars.UID != user.ID {
+		return http.StatusForbidden, nil, nil
+	}
+
+	updateUser, err := modelsx.ParseUser(req, modelsx.UserDeserializeSelf, modelsx.UserValidateEdit)
+
+	if err != nil {
+		return http.StatusBadRequest, []byte(err.Error()), nil
+	}
+
+	updateUser.ID = vars.UID
+
+	model := updateUser.ToModel()
+
+	if err := r.Users.Update(req.Context(), model, boil.Whitelist(updateUser.GetUpdateWhitelist()...)); err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	return modelsx.UserFromModel(model).Marshal(modelsx.UserSerializeSelf)
+}
+
+// SearchUsers returns list of users available to user matching query string
+//
+// Success returns json array of User objects representing users the requesting User can see, and which match query string
+// Non-admins cannot see banned users
+//
+// GET /users/search
+func (r *Routes) SearchUsers(user *models.User, req *http.Request) (int, []byte, error) {
+	users, err := r.Users.SearchMany(req.Context(), req.URL.Query().Get("query"))
+
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	if len(users) == 0 {
+		return http.StatusNoContent, nil, nil
+	}
+
+	return modelsx.UserFromModelBatch(users...).Marshal(modelsx.UserSerializeUser)
+}
+
+// GetUser returns specified user
+//
+// # Success returns json of User with spcified id
+//
+// GET /users/{user id}
+func (r *Routes) GetUser(user *models.User, req *http.Request) (int, []byte, error) {
+	vars := vars(req)
+
+	targetUser, err := r.Users.Find(req.Context(), vars.UID)
+
+	if err == sql.ErrNoRows {
+		return http.StatusNotFound, nil, nil
+	} else if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	codec := modelsx.UserSerializeUser
+
+	if vars.UID == user.ID {
+		codec = modelsx.UserSerializeSelf
+	}
+
+	return modelsx.UserFromModel(targetUser).Marshal(codec)
+}
+
+// GetCurrentUser returns json of requesting Uset
+//
+// # Success returns json of User making request
+//
+// GET /users/me
+func (r *Routes) GetCurrentUser(user *models.User, req *http.Request) (int, []byte, error) {
+	return modelsx.UserFromModel(user).Marshal(modelsx.UserSerializeSelf)
+}
+
+// GetUsers returns list of all users available to user
+//
+// # Success returns json array of all User objects available to requesting User
+//
+// GET /users
+func (r *Routes) GetUsers(user *models.User, req *http.Request) (int, []byte, error) {
+	users, err := r.Users.FindMany(req.Context(), getPaginationMods(req, models.UserColumns.JoinedAt, models.TableNames.User, models.UserColumns.ID)...)
+
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	if len(users) == 0 {
+		return http.StatusNoContent, nil, nil
+	}
+
+	return modelsx.UserFromModelBatch(users...).Marshal(modelsx.UserSerializeUser)
+}

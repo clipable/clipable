@@ -1,0 +1,10 @@
+no-tests            = true
+wipe                = true
+add-global-variants = false
+
+[psql]
+dbname = "postgres"
+host   = "localhost"
+port   = 5432
+user   = "postgres"
+sslmode = "disable"
