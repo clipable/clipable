@@ -14,10 +14,8 @@
     }
   ],
   "settings": {
-    "typescript.tsdk": "../frontend/node_modules/.pnpm/typescript@4.9.5/node_modules/typescript/lib",
+    "typescript.tsdk": "frontend/node_modules/.pnpm/typescript@4.9.5/node_modules/typescript/lib",
     "typescript.enablePromptUseWorkspaceTsdk": true,
-    "eslint.workingDirectories": [
-      "../frontend"
-    ]
+    "eslint.workingDirectories": ["frontend"]
   }
 }
