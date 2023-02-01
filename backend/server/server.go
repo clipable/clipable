@@ -57,8 +57,9 @@ func New(cfg *config.Config) (*Server, error) {
 		return nil, err
 	}
 
-	fmt.Println(m.Force(2))
-	fmt.Println(m.Down())
+	// Only uncomment this if you need to wipe the db
+	// fmt.Println(m.Force(2))
+	// fmt.Println(m.Down())
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		return nil, err
 	}

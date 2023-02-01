@@ -70,10 +70,8 @@ func (r *Routes) Callback(resp http.ResponseWriter, req *http.Request) {
 	token := jwt.Claims.(*ID)
 
 	user := &models.User{
-		ID:        token.UUID,
-		Firstname: token.GivenName,
-		Lastname:  token.FamilyName,
-		Email:     token.Email,
+		ID:    token.UUID,
+		Email: token.Email,
 	}
 
 	if ok, err := r.Users.Exists(req.Context(), token.UUID); err != nil {
@@ -81,13 +79,13 @@ func (r *Routes) Callback(resp http.ResponseWriter, req *http.Request) {
 		log.Errorln(err)
 		return
 	} else if !ok { // If the user doesn't exist, create them
-		if err := r.Users.Create(req.Context(), user, boil.Whitelist(models.UserColumns.ID, models.UserColumns.Firstname, models.UserColumns.Lastname, models.UserColumns.Email)); err != nil {
+		if err := r.Users.Create(req.Context(), user, boil.Whitelist(models.UserColumns.ID, models.UserColumns.Email)); err != nil {
 			resp.WriteHeader(http.StatusInternalServerError)
 			log.Errorln(err)
 			return
 		}
 	} else if ok { // If the user does exist, update their fields to re-sync their profile
-		if err := r.Users.Update(req.Context(), user, boil.Whitelist(models.UserColumns.ID, models.UserColumns.Firstname, models.UserColumns.Lastname, models.UserColumns.Email)); err != nil {
+		if err := r.Users.Update(req.Context(), user, boil.Whitelist(models.UserColumns.ID, models.UserColumns.Email)); err != nil {
 			resp.WriteHeader(http.StatusInternalServerError)
 			log.Errorln(err)
 			return

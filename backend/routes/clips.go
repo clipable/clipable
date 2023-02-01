@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"database/sql"
 	"io"
 	"log"
 	"mime"
@@ -51,8 +52,6 @@ func (r *Routes) UploadClip(user *models.User, req *http.Request) (int, []byte, 
 		return http.StatusBadRequest, []byte(err.Error()), nil
 	}
 
-	clip.CreatorID = user.ID
-
 	// Get the second part, which should be the video
 	videoPart, err := mr.NextPart()
 
@@ -72,7 +71,7 @@ func (r *Routes) UploadClip(user *models.User, req *http.Request) (int, []byte, 
 	model := clip.ToModel()
 
 	// Create the clip
-	tx, err := r.Clips.Create(req.Context(), model, boil.Whitelist(clip.GetUpdateWhitelist()...))
+	tx, err := r.Clips.Create(req.Context(), model, user, boil.Whitelist(clip.GetUpdateWhitelist()...))
 
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
@@ -98,4 +97,105 @@ func (r *Routes) UploadClip(user *models.User, req *http.Request) (int, []byte, 
 	}
 
 	return modelsx.ClipFromModel(model).Marshal()
+}
+
+func (r *Routes) GetClip(user *models.User, req *http.Request) (int, []byte, error) {
+	vars := vars(req)
+
+	clip, err := r.Clips.Find(req.Context(), vars.CID)
+
+	if err == sql.ErrNoRows {
+		return http.StatusNotFound, nil, nil
+	} else if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	return modelsx.ClipFromModel(clip).Marshal()
+}
+
+func (r *Routes) GetClips(user *models.User, req *http.Request) (int, []byte, error) {
+	clips, err := r.Clips.FindMany(
+		req.Context(),
+		getPaginationMods(req, models.ClipColumns.CreatedAt, models.TableNames.Clips, models.ClipColumns.ID)...,
+	)
+
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	if len(clips) == 0 {
+		return http.StatusNoContent, nil, nil
+	}
+
+	return modelsx.ClipFromModelBatch(clips...).Marshal()
+}
+
+func (r *Routes) SearchClips(user *models.User, req *http.Request) (int, []byte, error) {
+	clips, err := r.Clips.SearchMany(req.Context(), req.URL.Query().Get("query"))
+
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	if len(clips) == 0 {
+		return http.StatusNoContent, nil, nil
+	}
+
+	return modelsx.ClipFromModelBatch(clips...).Marshal()
+}
+
+func (r *Routes) UpdateClip(user *models.User, req *http.Request) (int, []byte, error) {
+	vars := vars(req)
+
+	clip, err := r.Clips.Find(req.Context(), vars.CID)
+
+	if err == sql.ErrNoRows {
+		return http.StatusNotFound, nil, nil
+	} else if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	if clip.CreatorID != user.ID {
+		return http.StatusForbidden, nil, nil
+	}
+
+	// Parse the json into a clip
+	clipx, err := modelsx.ParseClip(req.Body)
+
+	if err != nil {
+		return http.StatusBadRequest, []byte(err.Error()), nil
+	}
+
+	model := clipx.ToModel()
+
+	// Update the clip
+
+	if err := r.Clips.Update(req.Context(), model, boil.Whitelist(clipx.GetUpdateWhitelist()...)); err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	return modelsx.ClipFromModel(model).Marshal()
+}
+
+func (r *Routes) DeleteClip(user *models.User, req *http.Request) (int, []byte, error) {
+	vars := vars(req)
+
+	clip, err := r.Clips.Find(req.Context(), vars.CID)
+
+	if err == sql.ErrNoRows {
+		return http.StatusNotFound, nil, nil
+	} else if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	if clip.CreatorID != user.ID {
+		return http.StatusForbidden, nil, nil
+	}
+
+	// Delete the clip
+	if err := r.Clips.Delete(req.Context(), clip); err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	return http.StatusNoContent, nil, nil
 }

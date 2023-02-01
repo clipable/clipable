@@ -19,6 +19,8 @@ import (
 // Auth injects the user of a request to the handler
 func (r *Routes) Auth(handler func(u *models.User, r *http.Request) (int, []byte, error)) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
+		// TODO: Set the timeout of the request based on it's body size once Go 1.20 is released: https://github.com/golang/go/issues/54136
+
 		s, _ := r.store.Get(req, SESSION_NAME)
 
 		// debug print s.Values
@@ -78,6 +80,7 @@ func (r *Routes) Auth(handler func(u *models.User, r *http.Request) (int, []byte
 
 type RouteVars struct {
 	UID string
+	CID string
 }
 
 type key int
@@ -91,6 +94,7 @@ func (r *Routes) ParseVars(next http.Handler) http.Handler {
 		rv := &RouteVars{}
 
 		rv.UID, _ = vars["uid"]
+		rv.CID, _ = vars["cid"]
 
 		next.ServeHTTP(w, req.WithContext(
 			context.WithValue(req.Context(), VarKey, rv),

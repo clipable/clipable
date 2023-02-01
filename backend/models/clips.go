@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/friendsofgo/errors"
+	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -23,11 +24,11 @@ import (
 
 // Clip is an object representing the database table.
 type Clip struct {
-	ID          string    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Title       string    `boil:"title" json:"title" toml:"title" yaml:"title"`
-	Description string    `boil:"description" json:"description" toml:"description" yaml:"description"`
-	CreatorID   string    `boil:"creator_id" json:"creator_id" toml:"creator_id" yaml:"creator_id"`
-	CreatedAt   time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ID          string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Title       string      `boil:"title" json:"title" toml:"title" yaml:"title"`
+	Description null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
+	CreatorID   string      `boil:"creator_id" json:"creator_id" toml:"creator_id" yaml:"creator_id"`
+	CreatedAt   time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 
 	R *clipR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L clipL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -86,6 +87,44 @@ func (w whereHelperstring) NIN(slice []string) qm.QueryMod {
 	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
 }
 
+type whereHelpernull_String struct{ field string }
+
+func (w whereHelpernull_String) EQ(x null.String) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_String) NEQ(x null.String) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_String) LT(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_String) LTE(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_String) GT(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+func (w whereHelpernull_String) IN(slice []string) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
+}
+func (w whereHelpernull_String) NIN(slice []string) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
+}
+
+func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+
 type whereHelpertime_Time struct{ field string }
 
 func (w whereHelpertime_Time) EQ(x time.Time) qm.QueryMod {
@@ -110,13 +149,13 @@ func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
 var ClipWhere = struct {
 	ID          whereHelperstring
 	Title       whereHelperstring
-	Description whereHelperstring
+	Description whereHelpernull_String
 	CreatorID   whereHelperstring
 	CreatedAt   whereHelpertime_Time
 }{
 	ID:          whereHelperstring{field: "\"clips\".\"id\""},
 	Title:       whereHelperstring{field: "\"clips\".\"title\""},
-	Description: whereHelperstring{field: "\"clips\".\"description\""},
+	Description: whereHelpernull_String{field: "\"clips\".\"description\""},
 	CreatorID:   whereHelperstring{field: "\"clips\".\"creator_id\""},
 	CreatedAt:   whereHelpertime_Time{field: "\"clips\".\"created_at\""},
 }
@@ -150,8 +189,8 @@ type clipL struct{}
 
 var (
 	clipAllColumns            = []string{"id", "title", "description", "creator_id", "created_at"}
-	clipColumnsWithoutDefault = []string{"description", "creator_id"}
-	clipColumnsWithDefault    = []string{"id", "title", "created_at"}
+	clipColumnsWithoutDefault = []string{"title", "creator_id"}
+	clipColumnsWithDefault    = []string{"id", "description", "created_at"}
 	clipPrimaryKeyColumns     = []string{"id"}
 	clipGeneratedColumns      = []string{}
 )

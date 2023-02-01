@@ -22,11 +22,11 @@ var (
 
 // Clip objects represent Clip accounts
 type Clip struct {
-	ID          string      `validate:"-"                  in:"-"           out:"id"             `
-	Title       string      `validate:"min=2,max=64"       in:"title"       out:"title"          `
-	Description null.String `validate:"omitempty,max=1024" in:"description" out:"email,omitempty"`
-	CreatedAt   time.Time   `validate:"-"                  in:"-"           out:"created_at"     `
-	CreatorID   string      `validate:"-"                  in:"-"           out:"-"              `
+	ID          string      `validate:"-"                  in:"-"           out:"id"                   `
+	Title       string      `validate:"min=2,max=64"       in:"title"       out:"title"                `
+	Description null.String `validate:"omitempty,max=1024" in:"description" out:"description,omitempty"`
+	CreatedAt   time.Time   `validate:"-"                  in:"-"           out:"created_at"           `
+	CreatorID   string      `validate:"-"                  in:"-"           out:"-"                    `
 
 	Creator *User `validate:"-" in:"-" out:"creator"`
 }
@@ -36,7 +36,7 @@ func (u *Clip) ToModel() *models.Clip {
 	return &models.Clip{
 		ID:          u.ID,
 		Title:       u.Title,
-		Description: u.Description.String,
+		Description: u.Description,
 		CreatedAt:   u.CreatedAt,
 		CreatorID:   u.CreatorID,
 	}
@@ -78,7 +78,7 @@ func ClipFromModel(u *models.Clip) *Clip {
 	Clip := &Clip{
 		ID:          u.ID,
 		Title:       u.Title,
-		Description: null.StringFrom(u.Description),
+		Description: u.Description,
 		CreatedAt:   u.CreatedAt,
 		CreatorID:   u.CreatorID,
 	}

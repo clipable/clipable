@@ -3,6 +3,7 @@ package modelsx
 import (
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	jsoniter "github.com/json-iterator/go"
@@ -34,25 +35,19 @@ var (
 
 // User objects represent user accounts
 type User struct {
-	ID        string      `validateedit:"-"                      self-in:"-"            self-out:"id"                 out:"id"`
-	Username  null.String `validateedit:"omitempty,min=2,max=64" self-in:"username"     self-out:"username,omitempty" out:"username,omitempty"`
-	Email     string      `validateedit:"-"                      self-in:"-"            self-out:"email,omitempty"    out:"email,omitempty"`
-	Firstname string      `validateedit:"-"                      self-in:"-"            self-out:"firstName"          out:"firstName"`
-	Lastname  string      `validateedit:"-"                      self-in:"-"            self-out:"lastName"           out:"lastName"`
-	Online    bool        `validateedit:"-"                      self-in:"online"       self-out:"online"             out:"online"`
-	Phone     null.String `validateedit:"-"                      self-in:"phone"        self-out:"phone,omitempty"    out:"phone,omitempty"`
+	ID       string      `validateedit:"-"                      self-in:"-"            self-out:"id"                 out:"id"`
+	Username null.String `validateedit:"omitempty,min=2,max=64" self-in:"username"     self-out:"username,omitempty" out:"username,omitempty"`
+	Email    string      `validateedit:"-"                      self-in:"-"            self-out:"email,omitempty"    out:"-"`
+	JoinedAt time.Time   `validateedit:"-"                      self-in:"-"            self-out:"joined_at"          out:"joined_at"`
 }
 
 // ToModel converts a modelsx.User object to a model.User object
 func (u *User) ToModel() *models.User {
 	return &models.User{
-		ID:        u.ID,
-		Email:     u.Email,
-		Firstname: u.Firstname,
-		Lastname:  u.Lastname,
-		Username:  u.Username.String,
-		Online:    u.Online,
-		Phone:     u.Phone.String,
+		ID:       u.ID,
+		Email:    u.Email,
+		Username: u.Username.String,
+		JoinedAt: u.JoinedAt,
 	}
 }
 
@@ -76,20 +71,8 @@ func (u *User) GetUpdateWhitelist() []string {
 		nonNullFields = append(nonNullFields, models.UserColumns.Email)
 	}
 
-	if u.Firstname != "" {
-		nonNullFields = append(nonNullFields, models.UserColumns.Firstname)
-	}
-
-	if u.Lastname != "" {
-		nonNullFields = append(nonNullFields, models.UserColumns.Lastname)
-	}
-
 	if u.Username.Valid {
 		nonNullFields = append(nonNullFields, models.UserColumns.Username)
-	}
-
-	if u.Phone.Valid {
-		nonNullFields = append(nonNullFields, models.UserColumns.Phone)
 	}
 
 	return nonNullFields
@@ -98,13 +81,10 @@ func (u *User) GetUpdateWhitelist() []string {
 // UserFromModel converts a models.User object into a modelsx.User object
 func UserFromModel(u *models.User) *User {
 	user := &User{
-		ID:        u.ID,
-		Email:     u.Email,
-		Firstname: u.Firstname,
-		Lastname:  u.Lastname,
-		Username:  null.StringFrom(u.Username),
-		Online:    u.Online,
-		Phone:     null.StringFrom(u.Phone),
+		ID:       u.ID,
+		Email:    u.Email,
+		Username: null.StringFrom(u.Username),
+		JoinedAt: u.JoinedAt,
 	}
 
 	return user

@@ -23,79 +23,51 @@ import (
 
 // User is an object representing the database table.
 type User struct {
-	ID        string    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Username  string    `boil:"username" json:"username" toml:"username" yaml:"username"`
-	Email     string    `boil:"email" json:"email" toml:"email" yaml:"email"`
-	Firstname string    `boil:"firstname" json:"firstname" toml:"firstname" yaml:"firstname"`
-	Lastname  string    `boil:"lastname" json:"lastname" toml:"lastname" yaml:"lastname"`
-	Online    bool      `boil:"online" json:"online" toml:"online" yaml:"online"`
-	JoinedAt  time.Time `boil:"joined_at" json:"joined_at" toml:"joined_at" yaml:"joined_at"`
-	Phone     string    `boil:"phone" json:"phone" toml:"phone" yaml:"phone"`
+	ID       string    `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Username string    `boil:"username" json:"username" toml:"username" yaml:"username"`
+	Email    string    `boil:"email" json:"email" toml:"email" yaml:"email"`
+	JoinedAt time.Time `boil:"joined_at" json:"joined_at" toml:"joined_at" yaml:"joined_at"`
 
 	R *userR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L userL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var UserColumns = struct {
-	ID        string
-	Username  string
-	Email     string
-	Firstname string
-	Lastname  string
-	Online    string
-	JoinedAt  string
-	Phone     string
+	ID       string
+	Username string
+	Email    string
+	JoinedAt string
 }{
-	ID:        "id",
-	Username:  "username",
-	Email:     "email",
-	Firstname: "firstname",
-	Lastname:  "lastname",
-	Online:    "online",
-	JoinedAt:  "joined_at",
-	Phone:     "phone",
+	ID:       "id",
+	Username: "username",
+	Email:    "email",
+	JoinedAt: "joined_at",
 }
 
 var UserTableColumns = struct {
-	ID        string
-	Username  string
-	Email     string
-	Firstname string
-	Lastname  string
-	Online    string
-	JoinedAt  string
-	Phone     string
+	ID       string
+	Username string
+	Email    string
+	JoinedAt string
 }{
-	ID:        "user.id",
-	Username:  "user.username",
-	Email:     "user.email",
-	Firstname: "user.firstname",
-	Lastname:  "user.lastname",
-	Online:    "user.online",
-	JoinedAt:  "user.joined_at",
-	Phone:     "user.phone",
+	ID:       "user.id",
+	Username: "user.username",
+	Email:    "user.email",
+	JoinedAt: "user.joined_at",
 }
 
 // Generated where
 
 var UserWhere = struct {
-	ID        whereHelperstring
-	Username  whereHelperstring
-	Email     whereHelperstring
-	Firstname whereHelperstring
-	Lastname  whereHelperstring
-	Online    whereHelperbool
-	JoinedAt  whereHelpertime_Time
-	Phone     whereHelperstring
+	ID       whereHelperstring
+	Username whereHelperstring
+	Email    whereHelperstring
+	JoinedAt whereHelpertime_Time
 }{
-	ID:        whereHelperstring{field: "\"user\".\"id\""},
-	Username:  whereHelperstring{field: "\"user\".\"username\""},
-	Email:     whereHelperstring{field: "\"user\".\"email\""},
-	Firstname: whereHelperstring{field: "\"user\".\"firstname\""},
-	Lastname:  whereHelperstring{field: "\"user\".\"lastname\""},
-	Online:    whereHelperbool{field: "\"user\".\"online\""},
-	JoinedAt:  whereHelpertime_Time{field: "\"user\".\"joined_at\""},
-	Phone:     whereHelperstring{field: "\"user\".\"phone\""},
+	ID:       whereHelperstring{field: "\"user\".\"id\""},
+	Username: whereHelperstring{field: "\"user\".\"username\""},
+	Email:    whereHelperstring{field: "\"user\".\"email\""},
+	JoinedAt: whereHelpertime_Time{field: "\"user\".\"joined_at\""},
 }
 
 // UserRels is where relationship names are stored.
@@ -126,9 +98,9 @@ func (r *userR) GetCreatorClips() ClipSlice {
 type userL struct{}
 
 var (
-	userAllColumns            = []string{"id", "username", "email", "firstname", "lastname", "online", "joined_at", "phone"}
-	userColumnsWithoutDefault = []string{"email", "firstname", "lastname"}
-	userColumnsWithDefault    = []string{"id", "username", "online", "joined_at", "phone"}
+	userAllColumns            = []string{"id", "username", "email", "joined_at"}
+	userColumnsWithoutDefault = []string{"email"}
+	userColumnsWithDefault    = []string{"id", "username", "joined_at"}
 	userPrimaryKeyColumns     = []string{"id"}
 	userGeneratedColumns      = []string{}
 )

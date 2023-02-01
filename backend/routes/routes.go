@@ -88,6 +88,11 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 
 	// CLIP ENDPOINTS
 	endpoint("/clips", r.Auth(r.UploadClip), http.MethodPost)
+	endpoint("/clips", r.Auth(r.GetClips), http.MethodGet)
+	endpoint("/clips/{cid:[a-fA-F0-9-]{36}}", r.Auth(r.GetClip), http.MethodGet)
+	endpoint("/clips/{cid:[a-fA-F0-9-]{36}}", r.Auth(r.UpdateClip), http.MethodPatch)
+	endpoint("/clips/{cid:[a-fA-F0-9-]{36}}", r.Auth(r.DeleteClip), http.MethodDelete)
+	endpoint("/clips/search", r.Auth(r.SearchClips), http.MethodGet)
 
 	if cfg.CORS.Enabled {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{

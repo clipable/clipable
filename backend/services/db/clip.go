@@ -33,10 +33,17 @@ func (c *clips) Exists(ctx context.Context, cid string) (bool, error) {
 	return models.ClipExists(ctx, c.db, cid)
 }
 
+func (c *clips) Delete(ctx context.Context, clip *models.Clip) error {
+	_, err := clip.Delete(ctx, c.db)
+	return err
+}
+
 func (c *clips) SearchMany(ctx context.Context, query string) (models.ClipSlice, error) {
 	return models.Clips(
-		qm.Where("title LIKE ?", "%"+query+"%"),
-		qm.Or("description LIKE ?", "%"+query+"%"),
+		qm.Select("*"),
+		qm.Where(`f_concat_ws(' ', title, "description") ILIKE ?`, "%"+query+"%"),
+		qm.OrderBy(`f_concat_ws(' ', title, "description") <-> ?`, "%"+query+"%"),
+		qm.Limit(10),
 	).All(ctx, c.db)
 }
 
@@ -45,14 +52,23 @@ func (c *clips) Update(ctx context.Context, clip *models.Clip, columns boil.Colu
 	return err
 }
 
-func (c *clips) Create(ctx context.Context, clip *models.Clip, columns boil.Columns) (services.ClipTx, error) {
+func (c *clips) Create(ctx context.Context, clip *models.Clip, creator *models.User, columns boil.Columns) (services.ClipTx, error) {
 	tx, err := c.db.BeginTx(ctx, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
+	columns.Cols = append(columns.Cols, models.ClipColumns.CreatorID)
+	clip.CreatorID = creator.ID
+
 	if err := clip.Insert(ctx, tx, columns); err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	if err := clip.SetCreator(ctx, tx, false, creator); err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 
