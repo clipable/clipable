@@ -13,6 +13,7 @@ import (
 type Group struct {
 	ObjectStore ObjectStore
 	Users       Users
+	Clips       Clips
 }
 
 // Users Comment for linter
@@ -28,7 +29,7 @@ type Users interface {
 }
 
 type ObjectStore interface {
-	PutObject(id string, r io.Reader, size int64) error
+	PutObject(id string, r io.Reader, size int64) (int64, error)
 	GetObject(id string) (io.ReadCloser, error)
 	DeleteObject(id string) error
 	HasObject(id string) bool
@@ -47,6 +48,7 @@ type Clips interface {
 }
 
 type ClipTx interface {
+	UploadVideo(ctx context.Context, r io.Reader) (int64, error)
 	Commit() error
 	Rollback() error
 }

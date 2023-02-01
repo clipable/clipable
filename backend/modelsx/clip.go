@@ -8,6 +8,7 @@ import (
 	"webserver/models"
 
 	. "github.com/docker/go-units"
+	"github.com/volatiletech/null/v8"
 )
 
 // De/Serializer cases
@@ -21,10 +22,11 @@ var (
 
 // Clip objects represent Clip accounts
 type Clip struct {
-	ID          string    `validate:"-"              in:"-"           out:"id"             `
-	Title       string    `validate:"min=2,max=64"   in:"title"       out:"title"          `
-	Description string    `validate:"min=0,max=1024" in:"description" out:"email,omitempty"`
-	CreatedAt   time.Time `validate:"-"              in:"-"           out:"created_at"     `
+	ID          string      `validate:"-"                  in:"-"           out:"id"             `
+	Title       string      `validate:"min=2,max=64"       in:"title"       out:"title"          `
+	Description null.String `validate:"omitempty,max=1024" in:"description" out:"email,omitempty"`
+	CreatedAt   time.Time   `validate:"-"                  in:"-"           out:"created_at"     `
+	CreatorID   string      `validate:"-"                  in:"-"           out:"-"              `
 
 	Creator *User `validate:"-" in:"-" out:"creator"`
 }
@@ -34,8 +36,9 @@ func (u *Clip) ToModel() *models.Clip {
 	return &models.Clip{
 		ID:          u.ID,
 		Title:       u.Title,
-		Description: u.Description,
+		Description: u.Description.String,
 		CreatedAt:   u.CreatedAt,
+		CreatorID:   u.CreatorID,
 	}
 }
 
@@ -59,8 +62,12 @@ func (u *Clip) GetUpdateWhitelist() []string {
 		nonNullFields = append(nonNullFields, models.ClipColumns.Title)
 	}
 
-	if u.Description != "" {
+	if u.Description.Valid {
 		nonNullFields = append(nonNullFields, models.ClipColumns.Description)
+	}
+
+	if u.CreatorID != "" {
+		nonNullFields = append(nonNullFields, models.ClipColumns.CreatorID)
 	}
 
 	return nonNullFields
@@ -71,8 +78,9 @@ func ClipFromModel(u *models.Clip) *Clip {
 	Clip := &Clip{
 		ID:          u.ID,
 		Title:       u.Title,
-		Description: u.Description,
+		Description: null.StringFrom(u.Description),
 		CreatedAt:   u.CreatedAt,
+		CreatorID:   u.CreatorID,
 	}
 
 	if u.R != nil {

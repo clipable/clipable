@@ -17,10 +17,10 @@ func NewStore(c *minio.Client, bucketName string) services.ObjectStore {
 	return &store{c, bucketName}
 }
 
-func (s *store) PutObject(id string, r io.Reader, size int64) error {
-	_, err := s.s3.PutObject(context.Background(), s.bucketName, id, r, size, minio.PutObjectOptions{})
+func (s *store) PutObject(id string, r io.Reader, size int64) (int64, error) {
+	inf, err := s.s3.PutObject(context.Background(), s.bucketName, id, r, size, minio.PutObjectOptions{})
 
-	return err
+	return inf.Size, err
 }
 
 func (s *store) GetObject(id string) (io.ReadCloser, error) {

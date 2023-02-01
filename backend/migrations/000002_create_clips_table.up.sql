@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS "clips" (
   id            uuid                      PRIMARY KEY DEFAULT uuid_generate_v4(),
-  title         varchar                   NOT NULL DEFAULT '',
-  "description" varchar                   NOT NULL,
+  title         varchar                   NOT NULL,
+  "description" varchar,
   creator_id    uuid                      REFERENCES "user" (id) NOT NULL,
   created_at    timestamp with time zone  NOT NULL DEFAULT now()
 );

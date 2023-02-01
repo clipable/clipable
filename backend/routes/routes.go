@@ -56,11 +56,12 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 	router := mux.NewRouter()
 	gob.Register(&ID{})
 
-	router.Use(handlers.RecoveryHandler())
 	router.Use(LoggingMiddleware)
 	router.Use(r.ParseVars)
-	router.Use(csrf.Protect([]byte(cfg.Cookie.Key), csrf.Path("/api")))
-
+	if !cfg.Debug {
+		router.Use(handlers.RecoveryHandler())
+		router.Use(csrf.Protect([]byte(cfg.Cookie.Key), csrf.Path("/api")))
+	}
 	api := router.PathPrefix("/api").Subrouter()
 
 	mdlw := middleware.New(middleware.Config{
@@ -84,6 +85,9 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 	endpoint("/users", r.Auth(r.GetUsers), http.MethodGet)
 	endpoint("/users/{uid:[a-fA-F0-9-]{36}}", r.Auth(r.GetUser), http.MethodGet)
 	endpoint("/users/{uid:[a-fA-F0-9-]{36}}", r.Auth(r.UpdateUser), http.MethodPatch)
+
+	// CLIP ENDPOINTS
+	endpoint("/clips", r.Auth(r.UploadClip), http.MethodPost)
 
 	if cfg.CORS.Enabled {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{
@@ -114,6 +118,8 @@ func DefaultServiceGroup(cfg *config.Config, sdb *sql.DB, s3 *minio.Client) (*se
 		Users:       db.NewUsers(sdb),
 		ObjectStore: object.NewStore(s3, cfg.S3.Bucket),
 	}
+
+	group.Clips = db.NewClips(sdb, group.ObjectStore)
 
 	return group, nil
 }

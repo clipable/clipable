@@ -109,8 +109,8 @@ func (s *Server) Start() error {
 	srv := &http.Server{
 		Addr:           s.cfg.ListenAddr,
 		Handler:        s.routes.Router,
-		ReadTimeout:    5 * time.Second,
-		WriteTimeout:   10 * time.Second,
+		ReadTimeout:    5 * time.Minute,
+		WriteTimeout:   5 * time.Minute,
 		IdleTimeout:    120 * time.Second,
 		MaxHeaderBytes: 1 * MB,
 	}

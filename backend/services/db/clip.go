@@ -56,29 +56,34 @@ func (c *clips) Create(ctx context.Context, clip *models.Clip, columns boil.Colu
 		return nil, err
 	}
 
-	return &clipTx{tx, clip, c.os}, nil
+	return &clipTx{tx, clip, c.os, false}, nil
 }
 
 type clipTx struct {
 	tx   *sql.Tx
 	clip *models.Clip
 	os   services.ObjectStore
+
+	done bool
 }
 
-func (c *clipTx) UploadVideo(ctx context.Context, r io.Reader) error {
-	err := c.os.PutObject(c.clip.ID+"/video", r, 0)
-	// TODO: √ limit the size of the video in the route (where we put business logic (retard!))
-	// TODO: during rollback, check if the video was created in minio, and if it was but wasn't fully uploaded, delete it (make a bool for finished upload if put object finished with no error)
-	// TODO: √ make a HasObject method on the ObjectStore interface
-	// TODO: √ Godspeed <3
-	return c.tx.Commit()
+func (c *clipTx) UploadVideo(ctx context.Context, r io.Reader) (int64, error) {
+	return c.os.PutObject(c.clip.ID+"/video", r, -1)
 }
 
 func (c *clipTx) Commit() error {
-	return c.tx.Commit()
+	err := c.tx.Commit()
+
+	c.done = err == nil
+
+	return err
 }
 
 func (c *clipTx) Rollback() error {
-
+	if !c.done {
+		if err := c.os.DeleteObject(c.clip.ID + "/video"); err != nil {
+			return err
+		}
+	}
 	return c.tx.Rollback()
 }
