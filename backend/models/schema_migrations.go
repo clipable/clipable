@@ -318,11 +318,6 @@ func AddSchemaMigrationHook(hookPoint boil.HookPoint, schemaMigrationHook Schema
 	}
 }
 
-// OneG returns a single schemaMigration record from the query using the global executor.
-func (q schemaMigrationQuery) OneG(ctx context.Context) (*SchemaMigration, error) {
-	return q.One(ctx, boil.GetContextDB())
-}
-
 // One returns a single schemaMigration record from the query.
 func (q schemaMigrationQuery) One(ctx context.Context, exec boil.ContextExecutor) (*SchemaMigration, error) {
 	o := &SchemaMigration{}
@@ -342,11 +337,6 @@ func (q schemaMigrationQuery) One(ctx context.Context, exec boil.ContextExecutor
 	}
 
 	return o, nil
-}
-
-// AllG returns all SchemaMigration records from the query using the global executor.
-func (q schemaMigrationQuery) AllG(ctx context.Context) (SchemaMigrationSlice, error) {
-	return q.All(ctx, boil.GetContextDB())
 }
 
 // All returns all SchemaMigration records from the query.
@@ -369,11 +359,6 @@ func (q schemaMigrationQuery) All(ctx context.Context, exec boil.ContextExecutor
 	return o, nil
 }
 
-// CountG returns the count of all SchemaMigration records in the query using the global executor
-func (q schemaMigrationQuery) CountG(ctx context.Context) (int64, error) {
-	return q.Count(ctx, boil.GetContextDB())
-}
-
 // Count returns the count of all SchemaMigration records in the query.
 func (q schemaMigrationQuery) Count(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	var count int64
@@ -387,11 +372,6 @@ func (q schemaMigrationQuery) Count(ctx context.Context, exec boil.ContextExecut
 	}
 
 	return count, nil
-}
-
-// ExistsG checks if the row exists in the table using the global executor.
-func (q schemaMigrationQuery) ExistsG(ctx context.Context) (bool, error) {
-	return q.Exists(ctx, boil.GetContextDB())
 }
 
 // Exists checks if the row exists in the table.
@@ -419,11 +399,6 @@ func SchemaMigrations(mods ...qm.QueryMod) schemaMigrationQuery {
 	}
 
 	return schemaMigrationQuery{q}
-}
-
-// FindSchemaMigrationG retrieves a single record by ID.
-func FindSchemaMigrationG(ctx context.Context, version int64, selectCols ...string) (*SchemaMigration, error) {
-	return FindSchemaMigration(ctx, boil.GetContextDB(), version, selectCols...)
 }
 
 // FindSchemaMigration retrieves a single record by ID with an executor.
@@ -454,11 +429,6 @@ func FindSchemaMigration(ctx context.Context, exec boil.ContextExecutor, version
 	}
 
 	return schemaMigrationObj, nil
-}
-
-// InsertG a single record. See Insert for whitelist behavior description.
-func (o *SchemaMigration) InsertG(ctx context.Context, columns boil.Columns) error {
-	return o.Insert(ctx, boil.GetContextDB(), columns)
 }
 
 // Insert a single record using an executor.
@@ -540,12 +510,6 @@ func (o *SchemaMigration) Insert(ctx context.Context, exec boil.ContextExecutor,
 	return o.doAfterInsertHooks(ctx, exec)
 }
 
-// UpdateG a single SchemaMigration record using the global executor.
-// See Update for more documentation.
-func (o *SchemaMigration) UpdateG(ctx context.Context, columns boil.Columns) (int64, error) {
-	return o.Update(ctx, boil.GetContextDB(), columns)
-}
-
 // Update uses an executor to update the SchemaMigration.
 // See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
@@ -609,11 +573,6 @@ func (o *SchemaMigration) Update(ctx context.Context, exec boil.ContextExecutor,
 	return rowsAff, o.doAfterUpdateHooks(ctx, exec)
 }
 
-// UpdateAllG updates all rows with the specified column values.
-func (q schemaMigrationQuery) UpdateAllG(ctx context.Context, cols M) (int64, error) {
-	return q.UpdateAll(ctx, boil.GetContextDB(), cols)
-}
-
 // UpdateAll updates all rows with the specified column values.
 func (q schemaMigrationQuery) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
 	queries.SetUpdate(q.Query, cols)
@@ -629,11 +588,6 @@ func (q schemaMigrationQuery) UpdateAll(ctx context.Context, exec boil.ContextEx
 	}
 
 	return rowsAff, nil
-}
-
-// UpdateAllG updates all rows with the specified column values.
-func (o SchemaMigrationSlice) UpdateAllG(ctx context.Context, cols M) (int64, error) {
-	return o.UpdateAll(ctx, boil.GetContextDB(), cols)
 }
 
 // UpdateAll updates all rows with the specified column values, using an executor.
@@ -682,11 +636,6 @@ func (o SchemaMigrationSlice) UpdateAll(ctx context.Context, exec boil.ContextEx
 		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all schemaMigration")
 	}
 	return rowsAff, nil
-}
-
-// UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *SchemaMigration) UpsertG(ctx context.Context, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
-	return o.Upsert(ctx, boil.GetContextDB(), updateOnConflict, conflictColumns, updateColumns, insertColumns)
 }
 
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
@@ -805,12 +754,6 @@ func (o *SchemaMigration) Upsert(ctx context.Context, exec boil.ContextExecutor,
 	return o.doAfterUpsertHooks(ctx, exec)
 }
 
-// DeleteG deletes a single SchemaMigration record.
-// DeleteG will match against the primary key column to find the record to delete.
-func (o *SchemaMigration) DeleteG(ctx context.Context) (int64, error) {
-	return o.Delete(ctx, boil.GetContextDB())
-}
-
 // Delete deletes a single SchemaMigration record with an executor.
 // Delete will match against the primary key column to find the record to delete.
 func (o *SchemaMigration) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
@@ -847,10 +790,6 @@ func (o *SchemaMigration) Delete(ctx context.Context, exec boil.ContextExecutor)
 	return rowsAff, nil
 }
 
-func (q schemaMigrationQuery) DeleteAllG(ctx context.Context) (int64, error) {
-	return q.DeleteAll(ctx, boil.GetContextDB())
-}
-
 // DeleteAll deletes all matching rows.
 func (q schemaMigrationQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if q.Query == nil {
@@ -870,11 +809,6 @@ func (q schemaMigrationQuery) DeleteAll(ctx context.Context, exec boil.ContextEx
 	}
 
 	return rowsAff, nil
-}
-
-// DeleteAllG deletes all rows in the slice.
-func (o SchemaMigrationSlice) DeleteAllG(ctx context.Context) (int64, error) {
-	return o.DeleteAll(ctx, boil.GetContextDB())
 }
 
 // DeleteAll deletes all rows in the slice, using an executor.
@@ -926,15 +860,6 @@ func (o SchemaMigrationSlice) DeleteAll(ctx context.Context, exec boil.ContextEx
 	return rowsAff, nil
 }
 
-// ReloadG refetches the object from the database using the primary keys.
-func (o *SchemaMigration) ReloadG(ctx context.Context) error {
-	if o == nil {
-		return errors.New("models: no SchemaMigration provided for reload")
-	}
-
-	return o.Reload(ctx, boil.GetContextDB())
-}
-
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *SchemaMigration) Reload(ctx context.Context, exec boil.ContextExecutor) error {
@@ -945,16 +870,6 @@ func (o *SchemaMigration) Reload(ctx context.Context, exec boil.ContextExecutor)
 
 	*o = *ret
 	return nil
-}
-
-// ReloadAllG refetches every row with matching primary key column values
-// and overwrites the original object slice with the newly updated slice.
-func (o *SchemaMigrationSlice) ReloadAllG(ctx context.Context) error {
-	if o == nil {
-		return errors.New("models: empty SchemaMigrationSlice provided for reload all")
-	}
-
-	return o.ReloadAll(ctx, boil.GetContextDB())
 }
 
 // ReloadAll refetches every row with matching primary key column values
@@ -984,11 +899,6 @@ func (o *SchemaMigrationSlice) ReloadAll(ctx context.Context, exec boil.ContextE
 	*o = slice
 
 	return nil
-}
-
-// SchemaMigrationExistsG checks if the SchemaMigration row exists.
-func SchemaMigrationExistsG(ctx context.Context, version int64) (bool, error) {
-	return SchemaMigrationExists(ctx, boil.GetContextDB(), version)
 }
 
 // SchemaMigrationExists checks if the SchemaMigration row exists.

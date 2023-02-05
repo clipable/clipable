@@ -84,7 +84,7 @@ type clipTx struct {
 }
 
 func (c *clipTx) UploadVideo(ctx context.Context, r io.Reader) (int64, error) {
-	return c.os.PutObject(c.clip.ID+"/video", r, -1)
+	return c.os.PutObject(c.clip.ID+"/raw", r, -1)
 }
 
 func (c *clipTx) Commit() error {
@@ -97,7 +97,7 @@ func (c *clipTx) Commit() error {
 
 func (c *clipTx) Rollback() error {
 	if !c.done {
-		if err := c.os.DeleteObject(c.clip.ID + "/video"); err != nil {
+		if err := c.os.DeleteObject(c.clip.ID + "/raw"); err != nil {
 			return err
 		}
 	}

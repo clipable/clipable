@@ -106,6 +106,7 @@ func (s *Server) Start() error {
 	log.Infoln("Listening on", s.cfg.ListenAddr, "and", s.cfg.MetricsListenAddr)
 
 	go http.ListenAndServe(s.cfg.MetricsListenAddr, promhttp.Handler())
+	go http.ListenAndServe("127.0.0.1:12786", s.routes.InternalRouter)
 
 	srv := &http.Server{
 		Addr:           s.cfg.ListenAddr,

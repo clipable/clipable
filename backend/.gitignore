@@ -10,3 +10,4 @@ docs/swagger-codegen/.swagger-codegen/VERSION
 pumba
 _test-data/
 .DS_Store
+test/

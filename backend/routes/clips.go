@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"context"
 	"database/sql"
 	"io"
 	"log"
@@ -93,6 +94,10 @@ func (r *Routes) UploadClip(user *models.User, req *http.Request) (int, []byte, 
 	}
 
 	if err := tx.Commit(); err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	if err := r.Transcoder.Queue(context.Background(), model); err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
 
