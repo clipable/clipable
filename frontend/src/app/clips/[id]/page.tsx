@@ -2,25 +2,36 @@
 
 import { getVideos, Videos } from "@/shared/api";
 import { Inter } from "@next/font/google";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+
+import dashjs from "dashjs";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export default function Home() {
+export default function Page({ params }: { params: { id: string } }) {
   const loggedIn = false;
 
-  const [videos, setVideos] = useState<Videos[]>([]);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  //   const [videos, setVideos] = useState<Videos[]>([]);
+
+  //   useEffect(() => {
+  //     const getVids = async () => {
+  //       const vids = await getVideos();
+  //       setVideos(vids);
+  //     };
+  //     getVids();
+  //   }, []);
 
   useEffect(() => {
-    const getVids = async () => {
-      const vids = await getVideos();
-      setVideos(vids);
-    };
-    getVids();
-  }, []);
+    if (videoRef.current) {
+      const player = dashjs.MediaPlayer().create();
+      player.initialize(videoRef.current, `http://localhost:8080/api/clips/${params.id}/dash.mpd`, true);
+    }
+  }, [params.id]);
 
-  console.log(videos);
+  console.log(params.id);
 
   return (
     <main className="h-screen bg-white dark:bg-black">
@@ -55,24 +66,8 @@ export default function Home() {
           </div>
         </nav>
       </header>
-      <div className="container mx-auto py-4">
-        <ul role="list" className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-          {videos.map((video) => (
-            <li key={video.id}>
-              <div className="card w-96 bg-base-100 shadow-xl">
-                <div className="card-body">
-                  <h2 className="card-title">{video.title}</h2>
-                  <p>{video.description}</p>
-                  <div className="card-actions justify-end">
-                    <Link href={`/clips/${video.id}`}>
-                      <button className="btn btn-primary">View</button>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+      <div>
+        <video data-dashjs-player controls id="video" ref={videoRef} className="w-4/5 mx-auto pt-10" />
       </div>
     </main>
   );
