@@ -66,7 +66,6 @@ func New(cfg *config.Config) (*Server, error) {
 
 	cookieStore := sessions.NewCookieStore([]byte(cfg.Cookie.Key), []byte(cfg.Cookie.Key))
 	cookieStore.Options.SameSite = http.SameSiteLaxMode
-	cookieStore.Options.Path = "/api"
 	cookieStore.Options.Domain = cfg.Cookie.Domain
 	cookieStore.MaxAge(int((30 * (24 * time.Hour)).Seconds())) // 30 Days
 
