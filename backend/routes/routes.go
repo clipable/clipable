@@ -61,6 +61,7 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 	gob.Register(&ID{})
 
 	router.Use(LoggingMiddleware)
+	internalRouter.Use(LoggingMiddleware)
 	router.Use(r.ParseVars)
 	if !cfg.Debug {
 		router.Use(handlers.RecoveryHandler())
@@ -84,6 +85,7 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 
 	// INTERNAL ENDPOINTS
 	internalEndpoint("/read/{path}/{file}", r.ReadObject, http.MethodGet)
+	internalEndpoint("/write/{path}/{file}", r.UploadObject, http.MethodPost)
 
 	// AUTH ENDPOINTS
 	endpoint("/auth/login", r.Login, http.MethodGet)
@@ -106,7 +108,6 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 	endpoint("/clips/search", r.Auth(r.SearchClips), http.MethodGet)
 
 	// MPEG-DASH ENDPOINTS
-	endpoint("/clips/{cid:[a-fA-F0-9-]{36}}/dash.mpd", r.GetDashManifest, http.MethodGet)
 	endpoint("/clips/{cid:[a-fA-F0-9-]{36}}/{filename}", r.GetStreamFile, http.MethodGet)
 
 	if cfg.CORS.Enabled {

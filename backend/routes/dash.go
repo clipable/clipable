@@ -9,35 +9,6 @@ import (
 	"github.com/gotd/contrib/http_range"
 )
 
-func (r *Routes) GetDashManifest(w http.ResponseWriter, req *http.Request) {
-	vars := vars(req)
-	fmt.Println(vars)
-	if !r.ObjectStore.HasObject(vars.CID + "/manifest") {
-		http.Error(w, "Not Found", http.StatusNotFound)
-		return
-	}
-
-	// Get the object from the minio server
-	objReader, size, err := r.ObjectStore.GetObject(vars.CID + "/manifest")
-
-	if err != nil {
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	defer objReader.Close()
-
-	// Set the content length
-	w.Header().Set("Content-Length", fmt.Sprint(size))
-
-	// Copy the object to the response writer
-	_, err = io.Copy(w, objReader)
-	if err != nil {
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
-}
-
 func (r *Routes) GetStreamFile(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 

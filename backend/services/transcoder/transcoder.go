@@ -4,8 +4,6 @@ import (
 	"context"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"strings"
 
 	"webserver/models"
 	"webserver/services"
@@ -64,14 +62,6 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 	// syscall pipe: https://www.codeflict.com/go/syscall-pipe
 	// https://support.google.com/youtube/answer/1722171?hl=en#zippy=%2Cbitrate
 
-	if err := os.Mkdir(clip.ID, 0755); err != nil {
-		log.WithError(err).
-			Error("Error creating directory for clip")
-		return
-	}
-
-	defer os.RemoveAll(clip.ID + "/")
-
 	log.Infoln("Transcoding video", clip.ID)
 
 	cmd := exec.Command("ffmpeg",
@@ -80,7 +70,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		"-s", "1280x720",
 		"-qscale:v", "5",
 		"-frames:v", "1",
-		clip.ID+"/thumbnail.jpg",
+		"http://127.0.0.1:12786/write/"+clip.ID+"/thumbnail.jpg",
 	)
 
 	_, err := cmd.CombinedOutput()
@@ -115,7 +105,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		"-map", "0:a",
 		"-adaptation_sets", "id=0,streams=v id=1,streams=a",
 		"-f", "dash",
-		clip.ID+"/manifest.mpd",
+		"http://127.0.0.1:12786/write/"+clip.ID+"/dash.mpd",
 	)
 
 	_, err = cmd.CombinedOutput()
@@ -125,40 +115,6 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 			Error(cmd.String())
 		return
 	}
-
-	if err := t.uploadFile(clip.ID, "manifest.mpd", "manifest"); err != nil {
-		log.WithError(err).
-			Error("Error uploading manifest to minio")
-		return
-	}
-
-	if err := t.uploadFile(clip.ID, "thumbnail.jpg", "thumbnail.jpg"); err != nil {
-		log.WithError(err).
-			Error("Error uploading manifest to minio")
-		return
-	}
-
-	filepath.Walk(clip.ID, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if info.IsDir() {
-			return nil
-		}
-
-		if strings.HasSuffix(path, ".mpd") {
-			return nil
-		}
-
-		if err := t.uploadFile(clip.ID, info.Name(), info.Name()); err != nil {
-			log.WithError(err).
-				Error("Error uploading file to minio")
-			return err
-		}
-
-		return nil
-	})
 
 	log.Infoln("Finished transcoding video", clip.ID)
 
