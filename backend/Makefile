@@ -21,3 +21,9 @@ clideps:
 	test -s ${GOPATH}/bin/sqlboiler || { go install github.com/volatiletech/sqlboiler/v4@latest; }
 	test -s ${GOPATH}/bin/sqlboiler-psql || { go install github.com/volatiletech/sqlboiler/v4/drivers/sqlboiler-psql@latest; }
 	test -s ${GOPATH}/bin/swag || { go install github.com/swaggo/swag/cmd/swag@latest; }
+
+up:
+	docker start clipable-postgres clipable-moids clipable-prometheus clipable-grafana clipable-minio
+
+down:
+	docker stop clipable-postgres clipable-moids clipable-prometheus clipable-grafana clipable-minio
