@@ -9,6 +9,11 @@ import (
 	"github.com/gotd/contrib/http_range"
 )
 
+func (r *Routes) UploadObject(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	r.ObjectStore.PutObject(vars["path"]+"/"+vars["file"], req.Body, -1)
+}
+
 func (r *Routes) ReadObject(w http.ResponseWriter, req *http.Request) {
 	// Get the object ID from the URL
 	vars := mux.Vars(req)
