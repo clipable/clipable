@@ -4,6 +4,8 @@ import { getVideos, Videos } from "@/shared/api";
 import { Inter } from "@next/font/google";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { ControlBar } from "./controlbar";
+import "../../../styles/controlbar.css";
 
 import dashjs from "dashjs";
 
@@ -28,6 +30,11 @@ export default function Page({ params }: { params: { id: string } }) {
     if (videoRef.current) {
       const player = dashjs.MediaPlayer().create();
       player.initialize(videoRef.current, `http://localhost:8080/api/clips/${params.id}/dash.mpd`, true);
+
+      player.attachView(videoRef.current)
+      const controlbar = new ControlBar(player) as any;
+      //Player is instance of Dash.js MediaPlayer;
+      controlbar.initialize();
     }
   }, [params.id]);
 
@@ -67,7 +74,40 @@ export default function Page({ params }: { params: { id: string } }) {
         </nav>
       </header>
       <div>
-        <video data-dashjs-player controls id="video" ref={videoRef} className="w-4/5 mx-auto pt-10" />
+        <video slot="media" controls={false} ref={videoRef} preload="auto" autoPlay={true} className="w-4/5 mx-auto pt-10" />
+        <div id="videoController" className="video-controller unselectable">
+          <div id="playPauseBtn" className="btn-play-pause" title="Play/Pause">
+            <span id="iconPlayPause" className="icon-play"></span>
+          </div>
+          <span id="videoTime" className="time-display">00:00:00</span>
+          <div id="fullscreenBtn" className="btn-fullscreen control-icon-layout" title="Fullscreen">
+            <span className="icon-fullscreen-enter"></span>
+          </div>
+          <div id="bitrateListBtn" className="control-icon-layout" title="Bitrate List">
+            <span className="icon-bitrate"></span>
+          </div>
+          <input type="range" id="volumebar" className="volumebar" value="1" min="0" max="1" step=".01" />
+          <div id="muteBtn" className="btn-mute control-icon-layout" title="Mute">
+            <span id="iconMute" className="icon-mute-off"></span>
+          </div>
+          <div id="trackSwitchBtn" className="control-icon-layout" title="A/V Tracks">
+            <span className="icon-tracks"></span>
+          </div>
+          <div id="captionBtn" className="btn-caption control-icon-layout" title="Closed Caption">
+            <span className="icon-caption"></span>
+          </div>
+          <span id="videoDuration" className="duration-display">00:00:00</span>
+          <div className="seekContainer">
+            <div id="seekbar" className="seekbar seekbar-complete">
+              <div id="seekbar-buffer" className="seekbar seekbar-buffer"></div>
+              <div id="seekbar-play" className="seekbar seekbar-play"></div>
+            </div>
+          </div>
+          <div id="thumbnail-container" className="thumbnail-container">
+            <div id="thumbnail-elem" className="thumbnail-elem"></div>
+            <div id="thumbnail-time-label" className="thumbnail-time-label"></div>
+          </div>
+        </div>
       </div>
     </main>
   );
