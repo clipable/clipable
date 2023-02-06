@@ -56,20 +56,20 @@ export default function Home() {
         </nav>
       </header>
       <div className="container mx-auto py-4">
-        <ul role="list" className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+        <ul role="list" className="grid grid-cols-3 gap-24">
           {videos.map((video) => (
             <li key={video.id}>
-              <div className="card w-96 bg-base-100 shadow-xl">
-                <div className="card-body">
-                  <h2 className="card-title">{video.title}</h2>
-                  <p>{video.description}</p>
-                  <div className="card-actions justify-end">
-                    <Link href={`/clips/${video.id}`}>
-                      <button className="btn btn-primary">View</button>
-                    </Link>
+              <Link href={`/clips/${video.id}`}>
+                <div className="card card-compact w-96 bg-base-100 shadow-xl">
+                  <figure>
+                    <img src={`http://localhost:8080/api/clips/${video.id}/thumbnail.jpg`} alt="Shoes" />
+                  </figure>
+                  <div className="card-body">
+                    <h2 className="card-title">{video.title}</h2>
+                    <p>{video.description}</p>
                   </div>
                 </div>
-              </div>
+              </Link>
             </li>
           ))}
         </ul>
