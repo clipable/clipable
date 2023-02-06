@@ -2,7 +2,6 @@ package transcoder
 
 import (
 	"context"
-	"os"
 	"os/exec"
 
 	"webserver/models"
@@ -41,20 +40,6 @@ func (t *transcoder) Queue(ctx context.Context, clip *models.Clip) error {
 	return nil
 }
 
-func (t *transcoder) uploadFile(id string, file string, obj string) error {
-	f, err := os.Open(id + "/" + file)
-
-	if err != nil {
-		return err
-	}
-
-	defer f.Close()
-
-	_, err = t.obj.PutObject(id+"/"+obj, f, -1)
-
-	return err
-}
-
 func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 	// Maybe just use https://stackoverflow.com/questions/53352348/mpeg-dash-output-generated-by-ffmpeg-not-working ?
 	// Example of variables in ffmpeg https://ottverse.com/hls-packaging-using-ffmpeg-live-vod/
@@ -81,14 +66,13 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		return
 	}
 
-	cmd = exec.Command("ffmpeg",
-		"-i", "http://127.0.0.1:12786/read/"+clip.ID+"/raw",
+	ffmpegArgs := []string{
+		"-i", "http://127.0.0.1:12786/read/" + clip.ID + "/raw",
 		"-preset", "slow",
 		"-keyint_min", "30",
 		"-g", "30",
 		"-sc_threshold", "0",
 		"-seg_duration", "1",
-		"-r", "30",
 		"-c:v", "libx264",
 		"-pix_fmt", "yuv420p",
 		"-c:a", "aac",
@@ -98,15 +82,17 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		"-use_template", "1",
 		"-use_timeline", "1",
 		"-single_file", "1",
-		"-map", "v:0", "-s:0", "640x360", "-b:v:0", "1M", "-maxrate:0", "1.2M", "-bufsize:0", "2M",
-		"-map", "v:0", "-s:1", "854x480", "-b:v:1", "2.5M", "-maxrate:1", "2.7M", "-bufsize:1", "5M",
-		"-map", "v:0", "-s:2", "1280x720", "-b:v:2", "5M", "-maxrate:2", "5.3M", "-bufsize:2", "10M",
-		"-map", "v:0", "-s:3", "1920x1080", "-b:v:3", "10M", "-maxrate:3", "10.6M", "-bufsize:3", "20M",
+	}
+
+	ffmpegArgs = append(ffmpegArgs, GetPresetsForVideo("http://127.0.0.1:12786/read/"+clip.ID+"/raw")...)
+	ffmpegArgs = append(ffmpegArgs,
 		"-map", "0:a",
 		"-adaptation_sets", "id=0,streams=v id=1,streams=a",
 		"-f", "dash",
 		"http://127.0.0.1:12786/write/"+clip.ID+"/dash.mpd",
 	)
+
+	cmd = exec.Command("ffmpeg", ffmpegArgs...)
 
 	_, err = cmd.CombinedOutput()
 
