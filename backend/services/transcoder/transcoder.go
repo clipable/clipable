@@ -76,6 +76,23 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 
 	cmd := exec.Command("ffmpeg",
 		"-i", "http://127.0.0.1:12786/read/"+clip.ID+"/raw",
+		"-ss", "00:00:01",
+		"-s", "1280x720",
+		"-qscale:v", "5",
+		"-frames:v", "1",
+		clip.ID+"/thumbnail.jpg",
+	)
+
+	_, err := cmd.CombinedOutput()
+
+	if err != nil {
+		log.WithError(err).
+			Error(cmd.String())
+		return
+	}
+
+	cmd = exec.Command("ffmpeg",
+		"-i", "http://127.0.0.1:12786/read/"+clip.ID+"/raw",
 		"-preset", "slow",
 		"-keyint_min", "30",
 		"-g", "30",
@@ -101,7 +118,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		clip.ID+"/manifest.mpd",
 	)
 
-	_, err := cmd.CombinedOutput()
+	_, err = cmd.CombinedOutput()
 
 	if err != nil {
 		log.WithError(err).
@@ -110,6 +127,12 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 	}
 
 	if err := t.uploadFile(clip.ID, "manifest.mpd", "manifest"); err != nil {
+		log.WithError(err).
+			Error("Error uploading manifest to minio")
+		return
+	}
+
+	if err := t.uploadFile(clip.ID, "thumbnail.jpg", "thumbnail.jpg"); err != nil {
 		log.WithError(err).
 			Error("Error uploading manifest to minio")
 		return

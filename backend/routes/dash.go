@@ -63,26 +63,40 @@ func (r *Routes) GetStreamFile(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if len(ranges) > 1 || len(ranges) == 0 {
+	if len(ranges) > 1 {
 		http.Error(w, "Requested Range Not Satisfiable", http.StatusRequestedRangeNotSatisfiable)
 		return
 	}
 
-	// Accept ranges
-	w.Header().Set("Accept-Ranges", "bytes")
-	w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", ranges[0].Start, ranges[0].Length, size))
+	if len(ranges) == 0 {
+		// Set the content length
+		w.Header().Set("Content-Length", fmt.Sprint(size))
 
-	// Set the status code
-	w.WriteHeader(http.StatusPartialContent)
+		// Copy the object to the response writer
+		_, err = io.Copy(w, objReader)
+		if err != nil {
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
 
-	// Seek to the start of the range
-	_, err = objReader.Seek(ranges[0].Start, io.SeekStart)
-
-	if err != nil {
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
-	}
+	} else {
+		// Accept ranges
+		w.Header().Set("Accept-Ranges", "bytes")
+		w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", ranges[0].Start, ranges[0].Length, size))
 
-	io.CopyN(w, objReader, ranges[0].Length)
-	// TODO: Properly handle errors here and ignore if the error is due to the client disconnecting prematurely
+		// Set the status code
+		w.WriteHeader(http.StatusPartialContent)
+
+		// Seek to the start of the range
+		_, err = objReader.Seek(ranges[0].Start, io.SeekStart)
+
+		if err != nil {
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		io.CopyN(w, objReader, ranges[0].Length)
+		// TODO: Properly handle errors here and ignore if the error is due to the client disconnecting prematurely
+	}
 }
