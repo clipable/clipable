@@ -25,7 +25,7 @@ import (
 type User struct {
 	ID       string    `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Username string    `boil:"username" json:"username" toml:"username" yaml:"username"`
-	Email    string    `boil:"email" json:"email" toml:"email" yaml:"email"`
+	Password string    `boil:"password" json:"password" toml:"password" yaml:"password"`
 	JoinedAt time.Time `boil:"joined_at" json:"joined_at" toml:"joined_at" yaml:"joined_at"`
 
 	R *userR `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -35,24 +35,24 @@ type User struct {
 var UserColumns = struct {
 	ID       string
 	Username string
-	Email    string
+	Password string
 	JoinedAt string
 }{
 	ID:       "id",
 	Username: "username",
-	Email:    "email",
+	Password: "password",
 	JoinedAt: "joined_at",
 }
 
 var UserTableColumns = struct {
 	ID       string
 	Username string
-	Email    string
+	Password string
 	JoinedAt string
 }{
 	ID:       "user.id",
 	Username: "user.username",
-	Email:    "user.email",
+	Password: "user.password",
 	JoinedAt: "user.joined_at",
 }
 
@@ -61,12 +61,12 @@ var UserTableColumns = struct {
 var UserWhere = struct {
 	ID       whereHelperstring
 	Username whereHelperstring
-	Email    whereHelperstring
+	Password whereHelperstring
 	JoinedAt whereHelpertime_Time
 }{
 	ID:       whereHelperstring{field: "\"user\".\"id\""},
 	Username: whereHelperstring{field: "\"user\".\"username\""},
-	Email:    whereHelperstring{field: "\"user\".\"email\""},
+	Password: whereHelperstring{field: "\"user\".\"password\""},
 	JoinedAt: whereHelpertime_Time{field: "\"user\".\"joined_at\""},
 }
 
@@ -98,8 +98,8 @@ func (r *userR) GetCreatorClips() ClipSlice {
 type userL struct{}
 
 var (
-	userAllColumns            = []string{"id", "username", "email", "joined_at"}
-	userColumnsWithoutDefault = []string{"email"}
+	userAllColumns            = []string{"id", "username", "password", "joined_at"}
+	userColumnsWithoutDefault = []string{"password"}
 	userColumnsWithDefault    = []string{"id", "username", "joined_at"}
 	userPrimaryKeyColumns     = []string{"id"}
 	userGeneratedColumns      = []string{}

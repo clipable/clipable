@@ -16,6 +16,10 @@ import (
 //
 // PATCH /users/{user id}
 func (r *Routes) UpdateUser(user *models.User, req *http.Request) (int, []byte, error) {
+	if user == nil {
+		return http.StatusUnauthorized, nil, nil
+	}
+
 	vars := vars(req)
 
 	// Users shouldn't be able to update another users
@@ -23,7 +27,7 @@ func (r *Routes) UpdateUser(user *models.User, req *http.Request) (int, []byte, 
 		return http.StatusForbidden, nil, nil
 	}
 
-	updateUser, err := modelsx.ParseUser(req, modelsx.UserDeserializeSelf, modelsx.UserValidateEdit)
+	updateUser, err := modelsx.ParseUser(req, modelsx.UserValidateEdit)
 
 	if err != nil {
 		return http.StatusBadRequest, []byte(err.Error()), nil
@@ -37,7 +41,7 @@ func (r *Routes) UpdateUser(user *models.User, req *http.Request) (int, []byte, 
 		return http.StatusInternalServerError, nil, err
 	}
 
-	return modelsx.UserFromModel(model).Marshal(modelsx.UserSerializeSelf)
+	return modelsx.UserFromModel(model).Marshal()
 }
 
 // SearchUsers returns list of users available to user matching query string
@@ -57,7 +61,7 @@ func (r *Routes) SearchUsers(user *models.User, req *http.Request) (int, []byte,
 		return http.StatusNoContent, nil, nil
 	}
 
-	return modelsx.UserFromModelBatch(users...).Marshal(modelsx.UserSerializeUser)
+	return modelsx.UserFromModelBatch(users...).Marshal()
 }
 
 // GetUser returns specified user
@@ -76,13 +80,7 @@ func (r *Routes) GetUser(user *models.User, req *http.Request) (int, []byte, err
 		return http.StatusInternalServerError, nil, err
 	}
 
-	codec := modelsx.UserSerializeUser
-
-	if vars.UID == user.ID {
-		codec = modelsx.UserSerializeSelf
-	}
-
-	return modelsx.UserFromModel(targetUser).Marshal(codec)
+	return modelsx.UserFromModel(targetUser).Marshal()
 }
 
 // GetCurrentUser returns json of requesting Uset
@@ -91,7 +89,10 @@ func (r *Routes) GetUser(user *models.User, req *http.Request) (int, []byte, err
 //
 // GET /users/me
 func (r *Routes) GetCurrentUser(user *models.User, req *http.Request) (int, []byte, error) {
-	return modelsx.UserFromModel(user).Marshal(modelsx.UserSerializeSelf)
+	if user == nil {
+		return http.StatusUnauthorized, nil, nil
+	}
+	return modelsx.UserFromModel(user).Marshal()
 }
 
 // GetUsers returns list of all users available to user
@@ -110,5 +111,5 @@ func (r *Routes) GetUsers(user *models.User, req *http.Request) (int, []byte, er
 		return http.StatusNoContent, nil, nil
 	}
 
-	return modelsx.UserFromModelBatch(users...).Marshal(modelsx.UserSerializeUser)
+	return modelsx.UserFromModelBatch(users...).Marshal()
 }

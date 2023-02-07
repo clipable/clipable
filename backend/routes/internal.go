@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,7 +12,7 @@ import (
 
 func (r *Routes) UploadObject(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
-	r.ObjectStore.PutObject(vars["path"]+"/"+vars["file"], req.Body, -1)
+	r.ObjectStore.PutObject(context.Background(), vars["path"]+"/"+vars["file"], req.Body, -1)
 }
 
 func (r *Routes) ReadObject(w http.ResponseWriter, req *http.Request) {
@@ -19,7 +20,7 @@ func (r *Routes) ReadObject(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 
 	// Get the object from the minio server
-	objReader, size, err := r.ObjectStore.GetObject(vars["path"] + "/" + vars["file"])
+	objReader, size, err := r.ObjectStore.GetObject(context.Background(), vars["path"]+"/"+vars["file"])
 
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)

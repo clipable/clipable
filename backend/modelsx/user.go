@@ -12,9 +12,6 @@ import (
 	"webserver/models"
 )
 
-// UserSerialize is a helper type for serializing a User into a json byte array
-type UserSerialize jsoniter.API
-
 // UserDeserialize is a helper type for deserializng a json into a User object
 type UserDeserialize jsoniter.API
 
@@ -25,35 +22,35 @@ type UserValidator struct {
 
 // De/Serializer cases
 var (
-	UserSerializeSelf UserSerialize = MakeCodec("self-out")
-	UserSerializeUser UserSerialize = MakeCodec("out")
+	UserSerialize = MakeCodec("out")
 
 	UserDeserializeSelf UserDeserialize = MakeCodec("self-in")
 
-	UserValidateEdit = &UserValidator{makeValidator("validateedit")}
+	UserValidateEdit     = &UserValidator{makeValidator("validateedit")}
+	UserValidateRegister = &UserValidator{makeValidator("validateregister")}
 )
 
 // User objects represent user accounts
 type User struct {
-	ID       string      `validateedit:"-"                      self-in:"-"            self-out:"id"                 out:"id"`
-	Username null.String `validateedit:"omitempty,min=2,max=64" self-in:"username"     self-out:"username,omitempty" out:"username,omitempty"`
-	Email    string      `validateedit:"-"                      self-in:"-"            self-out:"email,omitempty"    out:"-"`
-	JoinedAt time.Time   `validateedit:"-"                      self-in:"-"            self-out:"joined_at"          out:"joined_at"`
+	ID       string      `validateregister:"-"             validateedit:"-"                       self-in:"-"        out:"id"`
+	Username null.String `validateregister:"min=2,max=64"  validateedit:"omitempty,min=2,max=64"  self-in:"username" out:"username"`
+	Password null.String `validateregister:"min=2,max=256" validateedit:"omitempty,min=2,max=256" self-in:"password" out:"-"`
+	JoinedAt time.Time   `validateregister:"-"             validateedit:"-"                       self-in:"-"        out:"joined_at"`
 }
 
 // ToModel converts a modelsx.User object to a model.User object
 func (u *User) ToModel() *models.User {
 	return &models.User{
 		ID:       u.ID,
-		Email:    u.Email,
+		Password: u.Password.String,
 		Username: u.Username.String,
 		JoinedAt: u.JoinedAt,
 	}
 }
 
 // Send marshals a modelsx.User object into a sendable json byte array
-func (u *User) Marshal(codec UserSerialize) (int, []byte, error) {
-	data, err := codec.Marshal(u)
+func (u *User) Marshal() (int, []byte, error) {
+	data, err := UserSerialize.Marshal(u)
 	code := http.StatusOK
 
 	if err != nil {
@@ -67,8 +64,8 @@ func (u *User) Marshal(codec UserSerialize) (int, []byte, error) {
 func (u *User) GetUpdateWhitelist() []string {
 	nonNullFields := make([]string, 0)
 
-	if u.Email != "" {
-		nonNullFields = append(nonNullFields, models.UserColumns.Email)
+	if u.Password.Valid {
+		nonNullFields = append(nonNullFields, models.UserColumns.Password)
 	}
 
 	if u.Username.Valid {
@@ -82,8 +79,8 @@ func (u *User) GetUpdateWhitelist() []string {
 func UserFromModel(u *models.User) *User {
 	user := &User{
 		ID:       u.ID,
-		Email:    u.Email,
-		Username: null.StringFrom(u.Username),
+		Password: null.NewString(u.Password, u.Password != ""),
+		Username: null.NewString(u.Username, u.Username != ""),
 		JoinedAt: u.JoinedAt,
 	}
 
@@ -91,7 +88,7 @@ func UserFromModel(u *models.User) *User {
 }
 
 // ParseUser parses a User object out of a client request
-func ParseUser(req *http.Request, codec UserDeserialize, v *UserValidator) (*User, error) {
+func ParseUser(req *http.Request, v *UserValidator) (*User, error) {
 	data, err := ioutil.ReadAll(req.Body)
 
 	if err != nil {
@@ -100,7 +97,7 @@ func ParseUser(req *http.Request, codec UserDeserialize, v *UserValidator) (*Use
 
 	a := &User{}
 
-	if err := codec.Unmarshal(data, a); err != nil {
+	if err := UserDeserializeSelf.Unmarshal(data, a); err != nil {
 		return nil, err
 	}
 
@@ -109,7 +106,6 @@ func ParseUser(req *http.Request, codec UserDeserialize, v *UserValidator) (*Use
 			return nil, handleValidationError(err)
 		}
 	}
-
 	return a, nil
 }
 
@@ -117,8 +113,8 @@ func ParseUser(req *http.Request, codec UserDeserialize, v *UserValidator) (*Use
 type UserArray []*User
 
 // Send converts a UserArray into a sendable json byte array
-func (aa UserArray) Marshal(codec UserSerialize) (int, []byte, error) {
-	data, err := codec.Marshal(aa)
+func (aa UserArray) Marshal() (int, []byte, error) {
+	data, err := UserSerialize.Marshal(aa)
 	code := http.StatusOK
 
 	if err != nil {

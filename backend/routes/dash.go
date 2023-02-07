@@ -12,13 +12,13 @@ import (
 func (r *Routes) GetStreamFile(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 
-	if !r.ObjectStore.HasObject(vars["cid"] + "/" + vars["filename"]) {
+	if !r.ObjectStore.HasObject(req.Context(), vars["cid"]+"/"+vars["filename"]) {
 		http.Error(w, "Not Found", http.StatusNotFound)
 		return
 	}
 
 	// Get the object from the minio server
-	objReader, size, err := r.ObjectStore.GetObject(vars["cid"] + "/" + vars["filename"])
+	objReader, size, err := r.ObjectStore.GetObject(req.Context(), vars["cid"]+"/"+vars["filename"])
 
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)

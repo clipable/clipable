@@ -81,11 +81,11 @@ func (r *Routes) UploadClip(user *models.User, req *http.Request) (int, []byte, 
 	// Always attempt to rollback, even if it succeeds, if the tx is committed, this is a no-op
 	defer tx.Rollback()
 
-	len, err := tx.UploadVideo(req.Context(), io.LimitReader(videoPart, 2*GB))
+	len, err := tx.UploadVideo(req.Context(), io.LimitReader(videoPart, 5*GB))
 
 	// LimitReader will return io.EOF once the limit is reached, so if we read exactly our limit
 	// there was more data to read, and the video was too large
-	if len == 2*GB {
+	if len == 5*GB {
 		return http.StatusBadRequest, []byte("Video too large"), nil
 	}
 
@@ -150,6 +150,11 @@ func (r *Routes) SearchClips(user *models.User, req *http.Request) (int, []byte,
 }
 
 func (r *Routes) UpdateClip(user *models.User, req *http.Request) (int, []byte, error) {
+
+	if user == nil {
+		return http.StatusUnauthorized, nil, nil
+	}
+
 	vars := vars(req)
 
 	clip, err := r.Clips.Find(req.Context(), vars.CID)
@@ -183,6 +188,11 @@ func (r *Routes) UpdateClip(user *models.User, req *http.Request) (int, []byte, 
 }
 
 func (r *Routes) DeleteClip(user *models.User, req *http.Request) (int, []byte, error) {
+
+	if user == nil {
+		return http.StatusUnauthorized, nil, nil
+	}
+
 	vars := vars(req)
 
 	clip, err := r.Clips.Find(req.Context(), vars.CID)

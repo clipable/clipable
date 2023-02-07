@@ -4,7 +4,6 @@ package routes
 import (
 	"crypto/tls"
 	"database/sql"
-	"encoding/gob"
 	"net/http"
 	"webserver/config"
 	"webserver/services"
@@ -22,7 +21,6 @@ import (
 	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
 	"github.com/slok/go-http-metrics/middleware"
 	"github.com/slok/go-http-metrics/middleware/std"
-	"golang.org/x/oauth2"
 )
 
 // Routes contain pointers to resources needed in endpoint handlers
@@ -31,7 +29,6 @@ type Routes struct {
 	cfg       *config.Config
 	*services.Group
 	store sessions.Store
-	oauth *oauth2.Config
 
 	Router         http.Handler
 	InternalRouter http.Handler
@@ -44,21 +41,10 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 		cfg:       cfg,
 		Group:     g,
 		store:     store,
-		oauth: &oauth2.Config{
-			RedirectURL:  cfg.OAuth.RedirectURL,
-			ClientID:     cfg.OAuth.ClientID,
-			ClientSecret: cfg.OAuth.ClientSecret,
-			Scopes:       cfg.OAuth.Scopes,
-			Endpoint: oauth2.Endpoint{
-				AuthURL:  cfg.OAuth.AuthURL,
-				TokenURL: cfg.OAuth.TokenURL,
-			},
-		},
 	}
 
 	router := mux.NewRouter()
 	internalRouter := mux.NewRouter()
-	gob.Register(&ID{})
 
 	router.Use(LoggingMiddleware)
 	internalRouter.Use(LoggingMiddleware)
@@ -83,13 +69,15 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 		internalRouter.Handle(path, f).Methods(method...)
 	}
 
+	// TODO: swap to https://github.com/uptrace/bunrouter?
+
 	// INTERNAL ENDPOINTS
 	internalEndpoint("/read/{path}/{file}", r.ReadObject, http.MethodGet)
 	internalEndpoint("/write/{path}/{file}", r.UploadObject, http.MethodPost)
 
 	// AUTH ENDPOINTS
-	endpoint("/auth/login", r.Login, http.MethodGet)
-	endpoint("/auth/callback", r.Callback, http.MethodGet)
+	endpoint("/auth/login", r.Login, http.MethodPost)
+	endpoint("/auth/register", r.Register, http.MethodPost)
 	endpoint("/auth/logout", r.Logout, http.MethodPost)
 
 	// USER ENDPOINTS

@@ -82,6 +82,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		"-use_template", "1",
 		"-use_timeline", "1",
 		"-single_file", "1",
+		"-http_persistent", "1",
 	}
 
 	ffmpegArgs = append(ffmpegArgs, GetPresetsForVideo("http://127.0.0.1:12786/read/"+clip.ID+"/raw")...)
@@ -104,7 +105,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 
 	log.Infoln("Finished transcoding video", clip.ID)
 
-	if err := t.obj.DeleteObject(clip.ID + "/raw"); err != nil {
+	if err := t.obj.DeleteObject(ctx, clip.ID+"/raw"); err != nil {
 		log.WithError(err).
 			Error("Error deleting raw video")
 		return

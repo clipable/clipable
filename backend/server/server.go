@@ -108,12 +108,13 @@ func (s *Server) Start() error {
 	go http.ListenAndServe("127.0.0.1:12786", s.routes.InternalRouter)
 
 	srv := &http.Server{
-		Addr:           s.cfg.ListenAddr,
-		Handler:        s.routes.Router,
-		ReadTimeout:    5 * time.Minute,
-		WriteTimeout:   5 * time.Minute,
-		IdleTimeout:    120 * time.Second,
-		MaxHeaderBytes: 1 * MB,
+		Addr:              s.cfg.ListenAddr,
+		Handler:           s.routes.Router,
+		ReadTimeout:       10 * time.Minute,
+		WriteTimeout:      10 * time.Minute,
+		ReadHeaderTimeout: 2 * time.Second,
+		IdleTimeout:       30 * time.Minute,
+		MaxHeaderBytes:    1 * MB,
 	}
 	return srv.ListenAndServe()
 }

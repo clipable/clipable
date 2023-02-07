@@ -38,15 +38,6 @@ type Config struct {
 		User     string
 		Password string
 	}
-
-	OAuth struct {
-		RedirectURL  string
-		ClientID     string
-		ClientSecret string
-		AuthURL      string
-		TokenURL     string
-		Scopes       []string
-	}
 }
 
 // New uses a file path stored in the CONFIG environment variable to populate the Config struct
