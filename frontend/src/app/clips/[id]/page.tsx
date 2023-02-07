@@ -41,6 +41,10 @@ export default function Page({ params }: { params: { id: string } }) {
       // const controlbar = new ControlBar(player) as any;
       //Player is instance of Dash.js MediaPlayer;
       // controlbar.initialize();
+
+      return () => {
+        player?.destroy();
+      }
     }
   }, [params.id]);
 
