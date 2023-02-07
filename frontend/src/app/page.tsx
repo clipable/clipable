@@ -23,8 +23,8 @@ export default function Home() {
   console.log(videos);
 
   return (
-    <main className="h-screen bg-white dark:bg-black">
-      <header className="bg-gray-900">
+    <main className="h-screen">
+      <header className="navbar bg-base-300">
         <nav className="flex px-2 lg:px-8" aria-label="Top">
           <div className="flex w-full grow justify-between border-b border-indigo-500 py-1 lg:border-none">
             <div className="flex items-center">
