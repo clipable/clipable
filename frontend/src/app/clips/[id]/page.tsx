@@ -4,6 +4,8 @@ import { getVideos, Videos } from "@/shared/api";
 import { Inter } from "@next/font/google";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import ShakaPlayer from "shaka-player-react";
+import "shaka-player-react/dist/controls.css";
 // import { ControlBar } from "./controlbar";
 // import "../../../styles/controlbar.css";
 
@@ -44,7 +46,7 @@ export default function Page({ params }: { params: { id: string } }) {
 
       return () => {
         player?.destroy();
-      }
+      };
     }
   }, [params.id]);
 
@@ -62,7 +64,7 @@ export default function Page({ params }: { params: { id: string } }) {
     const volume = value / 100;
 
     player?.setVolume(volume);
-  }
+  };
 
   const playPauseVideo = () => {
     player?.isPaused() ? player?.play() : player?.pause();
@@ -103,11 +105,7 @@ export default function Page({ params }: { params: { id: string } }) {
           </div>
         </nav>
       </header>
-      <div>
-        <video slot="media" controls ref={videoRef} preload="auto" autoPlay className="w-4/5 mx-auto pt-10" />
-        <button className="btn" onClick={playPauseVideo} />
-        <input type="range" min="0" max="100" value={volume} onChange={changeVolume} className="range range-xs" />
-      </div>
+      <ShakaPlayer autoPlay src={`http://localhost:8080/api/clips/${params.id}/dash.mpd`} />
     </main>
   );
 }
