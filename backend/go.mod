@@ -21,6 +21,7 @@ require (
 	github.com/minio/minio-go/v7 v7.0.47
 	github.com/modern-go/reflect2 v1.0.2
 	github.com/orcaman/concurrent-map v1.0.0
+	github.com/orcaman/concurrent-map/v2 v2.0.1
 	github.com/prometheus/client_golang v1.14.0
 	github.com/rs/cors v1.8.3
 	github.com/sirupsen/logrus v1.9.0

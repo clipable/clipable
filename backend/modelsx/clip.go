@@ -27,6 +27,7 @@ type Clip struct {
 	Description null.String `validate:"omitempty,max=1024" in:"description" out:"description,omitempty"`
 	CreatedAt   time.Time   `validate:"-"                  in:"-"           out:"created_at"           `
 	CreatorID   string      `validate:"-"                  in:"-"           out:"-"                    `
+	Processing  bool        `validate:"-"                  in:"-"           out:"processing"           `
 
 	Creator *User `validate:"-" in:"-" out:"creator"`
 }
@@ -39,6 +40,7 @@ func (u *Clip) ToModel() *models.Clip {
 		Description: u.Description,
 		CreatedAt:   u.CreatedAt,
 		CreatorID:   u.CreatorID,
+		Processing:  u.Processing,
 	}
 }
 
@@ -81,6 +83,7 @@ func ClipFromModel(u *models.Clip) *Clip {
 		Description: u.Description,
 		CreatedAt:   u.CreatedAt,
 		CreatorID:   u.CreatorID,
+		Processing:  u.Processing,
 	}
 
 	if u.R != nil {

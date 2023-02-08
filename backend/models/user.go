@@ -99,8 +99,8 @@ type userL struct{}
 
 var (
 	userAllColumns            = []string{"id", "username", "password", "joined_at"}
-	userColumnsWithoutDefault = []string{"password"}
-	userColumnsWithDefault    = []string{"id", "username", "joined_at"}
+	userColumnsWithoutDefault = []string{"username", "password"}
+	userColumnsWithDefault    = []string{"id", "joined_at"}
 	userPrimaryKeyColumns     = []string{"id"}
 	userGeneratedColumns      = []string{}
 )

@@ -61,4 +61,5 @@ type ClipTx interface {
 
 type Transcoder interface {
 	Queue(ctx context.Context, clip *models.Clip) error
+	GetProgress(clipID string) (int, bool)
 }

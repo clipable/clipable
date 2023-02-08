@@ -91,6 +91,7 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 	endpoint("/clips", r.Auth(r.UploadClip), http.MethodPost)
 	endpoint("/clips", r.Auth(r.GetClips), http.MethodGet)
 	endpoint("/clips/{cid:[a-fA-F0-9-]{36}}", r.Auth(r.GetClip), http.MethodGet)
+	endpoint("/clips/{cid:[a-fA-F0-9-]{36}}/progress", r.Auth(r.GetClipProgress), http.MethodGet)
 	endpoint("/clips/{cid:[a-fA-F0-9-]{36}}", r.Auth(r.UpdateClip), http.MethodPatch)
 	endpoint("/clips/{cid:[a-fA-F0-9-]{36}}", r.Auth(r.DeleteClip), http.MethodDelete)
 	endpoint("/clips/search", r.Auth(r.SearchClips), http.MethodGet)
@@ -131,7 +132,7 @@ func DefaultServiceGroup(cfg *config.Config, sdb *sql.DB, s3 *minio.Client) (*se
 	}
 
 	group.Clips = db.NewClips(sdb, group.ObjectStore)
-	group.Transcoder = transcoder.New(group.ObjectStore, 5)
+	group.Transcoder = transcoder.New(group, 5)
 
 	return group, nil
 }

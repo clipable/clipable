@@ -28,6 +28,7 @@ type Clip struct {
 	Title       string      `boil:"title" json:"title" toml:"title" yaml:"title"`
 	Description null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
 	CreatorID   string      `boil:"creator_id" json:"creator_id" toml:"creator_id" yaml:"creator_id"`
+	Processing  bool        `boil:"processing" json:"processing" toml:"processing" yaml:"processing"`
 	CreatedAt   time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 
 	R *clipR `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -39,12 +40,14 @@ var ClipColumns = struct {
 	Title       string
 	Description string
 	CreatorID   string
+	Processing  string
 	CreatedAt   string
 }{
 	ID:          "id",
 	Title:       "title",
 	Description: "description",
 	CreatorID:   "creator_id",
+	Processing:  "processing",
 	CreatedAt:   "created_at",
 }
 
@@ -53,12 +56,14 @@ var ClipTableColumns = struct {
 	Title       string
 	Description string
 	CreatorID   string
+	Processing  string
 	CreatedAt   string
 }{
 	ID:          "clips.id",
 	Title:       "clips.title",
 	Description: "clips.description",
 	CreatorID:   "clips.creator_id",
+	Processing:  "clips.processing",
 	CreatedAt:   "clips.created_at",
 }
 
@@ -125,6 +130,15 @@ func (w whereHelpernull_String) NIN(slice []string) qm.QueryMod {
 func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
 func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
+type whereHelperbool struct{ field string }
+
+func (w whereHelperbool) EQ(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperbool) NEQ(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
 type whereHelpertime_Time struct{ field string }
 
 func (w whereHelpertime_Time) EQ(x time.Time) qm.QueryMod {
@@ -151,12 +165,14 @@ var ClipWhere = struct {
 	Title       whereHelperstring
 	Description whereHelpernull_String
 	CreatorID   whereHelperstring
+	Processing  whereHelperbool
 	CreatedAt   whereHelpertime_Time
 }{
 	ID:          whereHelperstring{field: "\"clips\".\"id\""},
 	Title:       whereHelperstring{field: "\"clips\".\"title\""},
 	Description: whereHelpernull_String{field: "\"clips\".\"description\""},
 	CreatorID:   whereHelperstring{field: "\"clips\".\"creator_id\""},
+	Processing:  whereHelperbool{field: "\"clips\".\"processing\""},
 	CreatedAt:   whereHelpertime_Time{field: "\"clips\".\"created_at\""},
 }
 
@@ -188,9 +204,9 @@ func (r *clipR) GetCreator() *User {
 type clipL struct{}
 
 var (
-	clipAllColumns            = []string{"id", "title", "description", "creator_id", "created_at"}
+	clipAllColumns            = []string{"id", "title", "description", "creator_id", "processing", "created_at"}
 	clipColumnsWithoutDefault = []string{"title", "creator_id"}
-	clipColumnsWithDefault    = []string{"id", "description", "created_at"}
+	clipColumnsWithDefault    = []string{"id", "description", "processing", "created_at"}
 	clipPrimaryKeyColumns     = []string{"id"}
 	clipGeneratedColumns      = []string{}
 )

@@ -122,6 +122,38 @@ func (r *Routes) GetClip(user *models.User, req *http.Request) (int, []byte, err
 	return modelsx.ClipFromModel(clip).Marshal()
 }
 
+// GetClipProgress returns the progress of a clip, if it's being processed
+// Reports -1 if the processing has not yet begun, or a number between 0 and 100 based on the progress
+// Returns 204 if the clip is not being processed, or is done processing
+func (r *Routes) GetClipProgress(user *models.User, req *http.Request) (int, []byte, error) {
+	vars := vars(req)
+
+	clip, err := r.Clips.Find(req.Context(), vars.CID)
+
+	if err == sql.ErrNoRows {
+		return http.StatusNotFound, nil, nil
+	} else if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	// If either the clip is already done, or it's not being processed, return no content
+	if !clip.Processing {
+		return http.StatusNoContent, nil, nil
+	}
+
+	progress, ok := r.Transcoder.GetProgress(clip.ID)
+
+	if !ok {
+		return http.StatusNoContent, nil, nil
+	}
+
+	model := &modelsx.Progress{
+		Progress: progress,
+	}
+
+	return model.Marshal()
+}
+
 func (r *Routes) GetClips(user *models.User, req *http.Request) (int, []byte, error) {
 	clips, err := r.Clips.FindMany(
 		req.Context(),

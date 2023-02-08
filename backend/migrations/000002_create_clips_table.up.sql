@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS "clips" (
   title         varchar                   NOT NULL,
   "description" varchar,
   creator_id    uuid                      REFERENCES "user" (id) NOT NULL,
+  processing    boolean                   NOT NULL DEFAULT true,
   created_at    timestamp with time zone  NOT NULL DEFAULT now()
 );
 

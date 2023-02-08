@@ -4,7 +4,9 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -77,6 +79,46 @@ func CountAudioStreams(file string) (int, error) {
 	}
 
 	return len(strings.Split(string(out), "\n")) - 1, nil
+}
+
+func ParseSexagesimal(duration string) (time.Duration, error) {
+	parts := strings.Split(strings.TrimSpace(duration), ":")
+
+	if len(parts) != 3 {
+		return 0, errors.New("invalid duration format")
+	}
+
+	hours, err := strconv.Atoi(strings.TrimSpace(parts[0]))
+
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to parse hours")
+	}
+
+	minutes, err := strconv.Atoi(strings.TrimSpace(parts[1]))
+
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to parse minutes")
+	}
+
+	seconds, err := strconv.ParseFloat(strings.TrimSpace(parts[2]), 64)
+
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to parse seconds")
+	}
+
+	return time.Duration(hours)*time.Hour + time.Duration(minutes)*time.Minute + time.Duration(seconds*float64(time.Second)), nil
+}
+
+func GetVideoDuration(file string) (time.Duration, error) {
+	cmd := exec.Command("ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=duration", "-sexagesimal", "-of", "csv=s=x:p=0", file)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to execute "+cmd.String())
+	}
+
+	// out is formatted in HOURS:MM:SS.MICROSECONDS ex: 0:00:58.066667
+
+	return ParseSexagesimal(string(out))
 }
 
 func GetPresetsForVideo(file string) []string {

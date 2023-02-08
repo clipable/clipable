@@ -1,29 +1,38 @@
 package transcoder
 
 import (
+	"bufio"
 	"context"
-	"fmt"
+	"io"
+	"math"
 	"os/exec"
 	"strconv"
+	"strings"
+	"time"
 
 	"webserver/models"
 	"webserver/services"
 
+	cmap "github.com/orcaman/concurrent-map/v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/sourcegraph/conc/pool"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 // A go package that implements a worker pool to process files in minio using ffmpeg into mpeg-dash format
 // and stores the output in minio.
 type transcoder struct {
+	*services.Group
 	pool *pool.Pool
-	obj  services.ObjectStore
+
+	progress cmap.ConcurrentMap[string, int]
 }
 
-func New(obj services.ObjectStore, workers int) *transcoder {
+func New(grp *services.Group, workers int) *transcoder {
 	return &transcoder{
-		pool: pool.New().WithMaxGoroutines(workers),
-		obj:  obj,
+		pool:     pool.New().WithMaxGoroutines(workers),
+		Group:    grp,
+		progress: cmap.New[int](),
 	}
 }
 
@@ -39,7 +48,40 @@ func (t *transcoder) Queue(ctx context.Context, clip *models.Clip) error {
 		t.process(ctx, clip)
 	})
 
+	t.progress.Set(clip.ID, -1)
+
 	return nil
+}
+
+func (t *transcoder) GetProgress(clipID string) (int, bool) {
+	return t.progress.Get(clipID)
+}
+
+func (t *transcoder) reportProgress(pipe io.ReadCloser, clip *models.Clip, duration time.Duration) {
+	defer pipe.Close()
+	t.progress.Set(clip.ID, 0)
+
+	scanner := bufio.NewScanner(pipe)
+	for scanner.Scan() {
+		// Example line: frame=  100 fps=0.0 q=-1.0 size=     128kB time=00:00:03.00 bitrate= 341.0kbits/s speed=1.01e+03x
+		line := scanner.Text()
+		if strings.Contains(line, "time=") {
+			suffixPart := strings.Split(line, "time=")[1]
+			timeString := strings.Split(suffixPart, "bitrate=")[0]
+
+			currentTime, err := ParseSexagesimal(timeString)
+			if err != nil {
+				log.WithError(err).Error("Failed to parse frame number")
+				return
+			}
+
+			// Calculate the progress
+			progress := math.Round(float64(currentTime) / float64(duration) * 100.0)
+			t.progress.Set(clip.ID, int(progress))
+		}
+	}
+
+	t.progress.Remove(clip.ID)
 }
 
 func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
@@ -76,6 +118,14 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		return
 	}
 
+	duration, err := GetVideoDuration("http://127.0.0.1:12786/s3/" + clip.ID + "/raw")
+
+	if err != nil {
+		log.WithError(err).
+			Error("Error getting video frame count")
+		return
+	}
+
 	ffmpegArgs := []string{
 		"-i", "http://127.0.0.1:12786/s3/" + clip.ID + "/raw",
 		"-preset", "veryslow",
@@ -104,8 +154,6 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		ffmpegArgs = append(ffmpegArgs, "-map", "0:a")
 	}
 
-	fmt.Println(audioStreams)
-
 	if audioStreams > 1 {
 		ffmpegArgs = append(
 			ffmpegArgs,
@@ -127,7 +175,26 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 
 	cmd = exec.Command("ffmpeg", ffmpegArgs...)
 
-	_, err = cmd.CombinedOutput()
+	stderr, err := cmd.StderrPipe()
+
+	if err != nil {
+		log.WithError(err).
+			Error(cmd.String())
+		return
+	}
+
+	// Get the progress of the transcoding from ffmpeg's stderr
+	go t.reportProgress(stderr, clip, duration)
+
+	err = cmd.Start()
+
+	if err != nil {
+		log.WithError(err).
+			Error(cmd.String())
+		return
+	}
+
+	err = cmd.Wait()
 
 	if err != nil {
 		log.WithError(err).
@@ -137,9 +204,17 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 
 	log.Infoln("Finished transcoding video", clip.ID)
 
-	if err := t.obj.DeleteObject(ctx, clip.ID+"/raw"); err != nil {
+	if err := t.ObjectStore.DeleteObject(ctx, clip.ID+"/raw"); err != nil {
 		log.WithError(err).
 			Error("Error deleting raw video")
+		return
+	}
+
+	clip.Processing = false
+
+	if err := t.Clips.Update(ctx, clip, boil.Whitelist(models.ClipColumns.Processing)); err != nil {
+		log.WithError(err).
+			Error("Error updating clip")
 		return
 	}
 }
