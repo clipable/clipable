@@ -72,8 +72,8 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 	// TODO: swap to https://github.com/uptrace/bunrouter?
 
 	// INTERNAL ENDPOINTS
-	internalEndpoint("/read/{path}/{file}", r.ReadObject, http.MethodGet)
-	internalEndpoint("/write/{path}/{file}", r.UploadObject, http.MethodPost)
+	internalEndpoint("/s3/{path}/{file}", r.ReadObject, http.MethodGet)
+	internalEndpoint("/s3/{path}/{file}", r.UploadObject, http.MethodPost)
 
 	// AUTH ENDPOINTS
 	endpoint("/auth/login", r.Login, http.MethodPost)
