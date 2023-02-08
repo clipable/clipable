@@ -2,7 +2,9 @@ package transcoder
 
 import (
 	"context"
+	"fmt"
 	"os/exec"
+	"strconv"
 
 	"webserver/models"
 	"webserver/services"
@@ -66,6 +68,14 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		return
 	}
 
+	audioStreams, err := CountAudioStreams("http://127.0.0.1:12786/s3/" + clip.ID + "/raw")
+
+	if err != nil {
+		log.WithError(err).
+			Error("Error counting audio streams")
+		return
+	}
+
 	ffmpegArgs := []string{
 		"-i", "http://127.0.0.1:12786/s3/" + clip.ID + "/raw",
 		"-preset", "veryslow",
@@ -83,16 +93,34 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		"-use_template", "1",
 		"-use_timeline", "1",
 		"-single_file", "1",
-		"-movflags", "frag_keyframe+empty_moov",
 		"-tune", "film",
 		"-x264opts", "no-scenecut",
 		"-utc_timing_url", "https://time.akamai.com/?iso",
 	}
 
 	ffmpegArgs = append(ffmpegArgs, GetPresetsForVideo("http://127.0.0.1:12786/s3/"+clip.ID+"/raw")...)
+
+	if audioStreams > 0 {
+		ffmpegArgs = append(ffmpegArgs, "-map", "0:a")
+	}
+
+	fmt.Println(audioStreams)
+
+	if audioStreams > 1 {
+		ffmpegArgs = append(
+			ffmpegArgs,
+			"-filter_complex",
+			"amerge=inputs="+strconv.Itoa(audioStreams),
+		)
+	}
+
+	if audioStreams > 0 {
+		ffmpegArgs = append(ffmpegArgs, "-adaptation_sets", "id=0,streams=v id=1,streams=a")
+	} else {
+		ffmpegArgs = append(ffmpegArgs, "-adaptation_sets", "id=0,streams=v")
+	}
+
 	ffmpegArgs = append(ffmpegArgs,
-		"-map", "0:a",
-		"-adaptation_sets", "id=0,streams=v id=1,streams=a",
 		"-f", "dash",
 		"http://127.0.0.1:12786/s3/"+clip.ID+"/dash.mpd",
 	)

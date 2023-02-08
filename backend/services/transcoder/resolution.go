@@ -42,32 +42,49 @@ func bitString(bitrate float32) string {
 	return strconv.FormatFloat(float64(bitrate), 'f', 1, 64) + "M"
 }
 
-func GetPresetsForVideo(file string) []string {
+func getVideoStats(file string) (int, int, int, error) {
 	cmd := exec.Command("ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height,r_frame_rate", "-of", "csv=s=x:p=0", file)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		log.WithError(err).Error("Could not get video resolution")
-		return nil
+		return 0, 0, 0, err
 	}
 
 	resolution := strings.Split(string(out), "x")
 	width, err := strconv.Atoi(resolution[0])
 	if err != nil {
-		log.WithError(err).Error("Could not get video width")
-		return nil
+		return 0, 0, 0, err
 	}
 
 	height, err := strconv.Atoi(resolution[1])
 	if err != nil {
-		log.WithError(err).Error("Could not get video height")
-		return nil
+		return 0, 0, 0, err
 	}
 
 	fps, err := strconv.Atoi(strings.Split(resolution[2], "/")[0])
 
 	if err != nil {
-		log.WithError(err).Error("Could not get video framerate")
-		return nil
+		return 0, 0, 0, err
+	}
+
+	return width, height, fps, nil
+}
+
+func CountAudioStreams(file string) (int, error) {
+	cmd := exec.Command("ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=index", "-of", "csv=s=x:p=0", file)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return 0, err
+	}
+
+	return len(strings.Split(string(out), "\n")) - 1, nil
+}
+
+func GetPresetsForVideo(file string) []string {
+	width, height, fps, err := getVideoStats(file)
+
+	if err != nil {
+		log.Error(err)
+		return []string{}
 	}
 
 	if fps < 30 {
@@ -79,6 +96,11 @@ func GetPresetsForVideo(file string) []string {
 		if preset.Width <= width && preset.Height <= height && preset.Framerate <= fps {
 			presets = append(presets, preset)
 		}
+	}
+
+	// TODO: What happens when someone uploads vertical video?
+	if len(presets) == 0 {
+		presets = []Quality{QualityPresets[0]} // If no quality was select use the lowest one
 	}
 
 	ffmpegArgs := []string{}

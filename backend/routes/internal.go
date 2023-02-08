@@ -20,6 +20,11 @@ func (r *Routes) ReadObject(w http.ResponseWriter, req *http.Request) {
 	// Get the object ID from the URL
 	vars := mux.Vars(req)
 
+	if !r.ObjectStore.HasObject(context.Background(), vars["path"]+"/"+vars["file"]) {
+		http.Error(w, "Not Found", http.StatusNotFound)
+		return
+	}
+
 	// Get the object from the minio server
 	objReader, size, err := r.ObjectStore.GetObject(context.Background(), vars["path"]+"/"+vars["file"])
 
