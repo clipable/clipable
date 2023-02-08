@@ -25,5 +25,8 @@ export const getVideos = async (): Promise<Videos[]> => {
       "Content-Type": "application/json",
     },
   });
+  if (response.status === 204) {
+    return [];
+  }
   return response.json();
 };

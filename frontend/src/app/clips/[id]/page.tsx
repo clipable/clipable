@@ -4,8 +4,8 @@ import { getVideos, Videos } from "@/shared/api";
 import { Inter } from "@next/font/google";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ControlBar } from "./controlbar";
-import "../../../styles/controlbar.css";
+// import { ControlBar } from "./controlbar";
+// import "../../../styles/controlbar.css";
 
 import dashjs from "dashjs";
 
@@ -15,6 +15,10 @@ export default function Page({ params }: { params: { id: string } }) {
   const loggedIn = false;
 
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  const [player, setPlayer] = useState<dashjs.MediaPlayerClass | null>(null);
+
+  const [volume, setVolume] = useState<number>(50);
 
   //   const [videos, setVideos] = useState<Videos[]>([]);
 
@@ -31,12 +35,38 @@ export default function Page({ params }: { params: { id: string } }) {
       const player = dashjs.MediaPlayer().create();
       player.initialize(videoRef.current, `http://localhost:8080/api/clips/${params.id}/dash.mpd`, true);
 
-      player.attachView(videoRef.current)
-      const controlbar = new ControlBar(player) as any;
+      player.attachView(videoRef.current);
+
+      setPlayer(player);
+      // const controlbar = new ControlBar(player) as any;
       //Player is instance of Dash.js MediaPlayer;
-      controlbar.initialize();
+      // controlbar.initialize();
+
+      return () => {
+        player?.destroy();
+      }
     }
   }, [params.id]);
+
+  const changeVolume = (change: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(change.target.value, 10);
+    if (isNaN(value)) return;
+
+    setVolume(value);
+
+    console.log(player?.getVolume());
+
+    // volume is in range 0-1
+    // so we need to divide by 100
+
+    const volume = value / 100;
+
+    player?.setVolume(volume);
+  }
+
+  const playPauseVideo = () => {
+    player?.isPaused() ? player?.play() : player?.pause();
+  };
 
   console.log(params.id);
 
@@ -74,40 +104,9 @@ export default function Page({ params }: { params: { id: string } }) {
         </nav>
       </header>
       <div>
-        <video slot="media" controls={false} ref={videoRef} preload="auto" autoPlay={true} className="w-4/5 mx-auto pt-10" />
-        <div id="videoController" className="video-controller unselectable">
-          <div id="playPauseBtn" className="btn-play-pause" title="Play/Pause">
-            <span id="iconPlayPause" className="icon-play"></span>
-          </div>
-          <span id="videoTime" className="time-display">00:00:00</span>
-          <div id="fullscreenBtn" className="btn-fullscreen control-icon-layout" title="Fullscreen">
-            <span className="icon-fullscreen-enter"></span>
-          </div>
-          <div id="bitrateListBtn" className="control-icon-layout" title="Bitrate List">
-            <span className="icon-bitrate"></span>
-          </div>
-          <input type="range" id="volumebar" className="volumebar" value="1" min="0" max="1" step=".01" />
-          <div id="muteBtn" className="btn-mute control-icon-layout" title="Mute">
-            <span id="iconMute" className="icon-mute-off"></span>
-          </div>
-          <div id="trackSwitchBtn" className="control-icon-layout" title="A/V Tracks">
-            <span className="icon-tracks"></span>
-          </div>
-          <div id="captionBtn" className="btn-caption control-icon-layout" title="Closed Caption">
-            <span className="icon-caption"></span>
-          </div>
-          <span id="videoDuration" className="duration-display">00:00:00</span>
-          <div className="seekContainer">
-            <div id="seekbar" className="seekbar seekbar-complete">
-              <div id="seekbar-buffer" className="seekbar seekbar-buffer"></div>
-              <div id="seekbar-play" className="seekbar seekbar-play"></div>
-            </div>
-          </div>
-          <div id="thumbnail-container" className="thumbnail-container">
-            <div id="thumbnail-elem" className="thumbnail-elem"></div>
-            <div id="thumbnail-time-label" className="thumbnail-time-label"></div>
-          </div>
-        </div>
+        <video slot="media" controls ref={videoRef} preload="auto" autoPlay className="w-4/5 mx-auto pt-10" />
+        <button className="btn" onClick={playPauseVideo} />
+        <input type="range" min="0" max="100" value={volume} onChange={changeVolume} className="range range-xs" />
       </div>
     </main>
   );
