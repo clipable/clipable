@@ -50,12 +50,12 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 	log.Infoln("Transcoding video", clip.ID)
 
 	cmd := exec.Command("ffmpeg",
-		"-i", "http://127.0.0.1:12786/read/"+clip.ID+"/raw",
+		"-i", "http://127.0.0.1:12786/s3/"+clip.ID+"/raw",
 		"-ss", "00:00:01",
 		"-s", "1280x720",
 		"-qscale:v", "5",
 		"-frames:v", "1",
-		"http://127.0.0.1:12786/write/"+clip.ID+"/thumbnail.jpg",
+		"http://127.0.0.1:12786/s3/"+clip.ID+"/thumbnail.jpg",
 	)
 
 	_, err := cmd.CombinedOutput()
@@ -67,9 +67,10 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 	}
 
 	ffmpegArgs := []string{
-		"-i", "http://127.0.0.1:12786/read/" + clip.ID + "/raw",
-		"-preset", "slow",
+		"-i", "http://127.0.0.1:12786/s3/" + clip.ID + "/raw",
+		"-preset", "veryslow",
 		"-keyint_min", "30",
+		"-hls_playlist_type", "vod",
 		"-g", "30",
 		"-sc_threshold", "0",
 		"-seg_duration", "1",
@@ -82,15 +83,18 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		"-use_template", "1",
 		"-use_timeline", "1",
 		"-single_file", "1",
-		"-http_persistent", "1",
+		"-movflags", "frag_keyframe+empty_moov",
+		"-tune", "film",
+		"-x264opts", "no-scenecut",
+		"-utc_timing_url", "https://time.akamai.com/?iso",
 	}
 
-	ffmpegArgs = append(ffmpegArgs, GetPresetsForVideo("http://127.0.0.1:12786/read/"+clip.ID+"/raw")...)
+	ffmpegArgs = append(ffmpegArgs, GetPresetsForVideo("http://127.0.0.1:12786/s3/"+clip.ID+"/raw")...)
 	ffmpegArgs = append(ffmpegArgs,
 		"-map", "0:a",
 		"-adaptation_sets", "id=0,streams=v id=1,streams=a",
 		"-f", "dash",
-		"http://127.0.0.1:12786/write/"+clip.ID+"/dash.mpd",
+		"http://127.0.0.1:12786/s3/"+clip.ID+"/dash.mpd",
 	)
 
 	cmd = exec.Command("ffmpeg", ffmpegArgs...)

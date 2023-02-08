@@ -70,6 +70,10 @@ func GetPresetsForVideo(file string) []string {
 		return nil
 	}
 
+	if fps < 30 {
+		fps = 30
+	}
+
 	var presets []Quality
 	for _, preset := range QualityPresets {
 		if preset.Width <= width && preset.Height <= height && preset.Framerate <= fps {

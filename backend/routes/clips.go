@@ -17,6 +17,10 @@ import (
 )
 
 func (r *Routes) UploadClip(user *models.User, req *http.Request) (int, []byte, error) {
+	if user == nil {
+		return http.StatusUnauthorized, nil, nil
+	}
+
 	// Get media type information from the content type header
 	mediaType, params, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
 
@@ -150,7 +154,6 @@ func (r *Routes) SearchClips(user *models.User, req *http.Request) (int, []byte,
 }
 
 func (r *Routes) UpdateClip(user *models.User, req *http.Request) (int, []byte, error) {
-
 	if user == nil {
 		return http.StatusUnauthorized, nil, nil
 	}
@@ -188,7 +191,6 @@ func (r *Routes) UpdateClip(user *models.User, req *http.Request) (int, []byte, 
 }
 
 func (r *Routes) DeleteClip(user *models.User, req *http.Request) (int, []byte, error) {
-
 	if user == nil {
 		return http.StatusUnauthorized, nil, nil
 	}

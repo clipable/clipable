@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gotd/contrib/http_range"
+	log "github.com/sirupsen/logrus"
 )
 
 func (r *Routes) UploadObject(w http.ResponseWriter, req *http.Request) {
@@ -24,6 +25,7 @@ func (r *Routes) ReadObject(w http.ResponseWriter, req *http.Request) {
 
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		log.WithError(err).Error("Failed to get object")
 		return
 	}
 
@@ -42,6 +44,11 @@ func (r *Routes) ReadObject(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if len(ranges) == 1 {
+		if ranges[0].Start > size || ranges[0].Start+ranges[0].Length > size {
+			http.Error(w, "Requested Range Not Satisfiable", http.StatusRequestedRangeNotSatisfiable)
+			return
+		}
+
 		// Accept ranges
 		w.Header().Set("Accept-Ranges", "bytes")
 		w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", ranges[0].Start, ranges[0].Length, size))
@@ -55,6 +62,7 @@ func (r *Routes) ReadObject(w http.ResponseWriter, req *http.Request) {
 
 		if err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			log.WithError(err).Error("Failed to seek to start of range")
 			return
 		}
 
@@ -65,6 +73,7 @@ func (r *Routes) ReadObject(w http.ResponseWriter, req *http.Request) {
 		_, err := io.Copy(w, objReader)
 		if err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			log.WithError(err).Error("Failed to copy object to response writer")
 			return
 		}
 	}
