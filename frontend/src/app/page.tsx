@@ -55,7 +55,7 @@ export default function Home() {
           </div>
         </nav>
       </header>
-      <div className="container mx-auto py-4">
+      <div className="container mx-auto py-3">
         <ul role="list" className="grid grid-cols-3 gap-24">
           {videos.map((video) => (
             <li key={video.id}>
@@ -65,8 +65,11 @@ export default function Home() {
                     <img src={`http://localhost:8080/api/clips/${video.id}/thumbnail.jpg`} alt="Shoes" />
                   </figure>
                   <div className="card-body">
-                    <h2 className="card-title">{video.title}</h2>
-                    <p>{video.description}</p>
+                    <h2 className="flex-row flex">
+                    <div className="container flex card-title"> title: {video.title}</div>
+                    <div className="container flex card-title"> views: {video.views}</div>
+                    </h2>
+                    <p>{video.description}Desc: {video.description}</p>
                   </div>
                 </div>
               </Link>
