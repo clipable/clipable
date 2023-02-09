@@ -19,11 +19,11 @@ type Group struct {
 
 // Users Comment for linter
 type Users interface {
-	Find(ctx context.Context, uid string) (*models.User, error)
+	Find(ctx context.Context, uid int64) (*models.User, error)
 	FindMany(ctx context.Context, mods ...qm.QueryMod) (models.UserSlice, error)
 	FindUsername(ctx context.Context, username string) (*models.User, error)
 
-	Exists(ctx context.Context, uid string) (bool, error)
+	Exists(ctx context.Context, uid int64) (bool, error)
 	ExistsUsername(ctx context.Context, username string) (bool, error)
 
 	SearchMany(ctx context.Context, query string) (models.UserSlice, error)
@@ -42,9 +42,9 @@ type ObjectStore interface {
 
 // NewGroup Comment for linter
 type Clips interface {
-	Find(ctx context.Context, cid string) (*models.Clip, error)
+	Find(ctx context.Context, cid int64) (*models.Clip, error)
 	FindMany(ctx context.Context, mods ...qm.QueryMod) (models.ClipSlice, error)
-	Exists(ctx context.Context, cid string) (bool, error)
+	Exists(ctx context.Context, cid int64) (bool, error)
 	Delete(ctx context.Context, clip *models.Clip) error
 
 	SearchMany(ctx context.Context, query string) (models.ClipSlice, error)
@@ -61,5 +61,5 @@ type ClipTx interface {
 
 type Transcoder interface {
 	Queue(ctx context.Context, clip *models.Clip) error
-	GetProgress(clipID string) (int, bool)
+	GetProgress(cid int64) (int, bool)
 }

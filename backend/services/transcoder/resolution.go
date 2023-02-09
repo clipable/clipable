@@ -78,7 +78,7 @@ func CountAudioStreams(file string) (int, error) {
 		return 0, err
 	}
 
-	return len(strings.Split(string(out), "\n")) - 1, nil
+	return len(strings.Split(strings.TrimSpace(string(out)), "\n")) - 1, nil
 }
 
 func ParseSexagesimal(duration string) (time.Duration, error) {

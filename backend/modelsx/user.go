@@ -32,7 +32,7 @@ var (
 
 // User objects represent user accounts
 type User struct {
-	ID       string      `validateregister:"-"             validateedit:"-"                       self-in:"-"        out:"id"`
+	ID       HashID      `validateregister:"-"             validateedit:"-"                       self-in:"-"        out:"id"`
 	Username null.String `validateregister:"min=2,max=64"  validateedit:"omitempty,min=2,max=64"  self-in:"username" out:"username"`
 	Password null.String `validateregister:"min=2,max=256" validateedit:"omitempty,min=2,max=256" self-in:"password" out:"-"`
 	JoinedAt time.Time   `validateregister:"-"             validateedit:"-"                       self-in:"-"        out:"joined_at"`
@@ -41,7 +41,7 @@ type User struct {
 // ToModel converts a modelsx.User object to a model.User object
 func (u *User) ToModel() *models.User {
 	return &models.User{
-		ID:       u.ID,
+		ID:       int64(u.ID),
 		Password: u.Password.String,
 		Username: u.Username.String,
 		JoinedAt: u.JoinedAt,
@@ -78,7 +78,7 @@ func (u *User) GetUpdateWhitelist() []string {
 // UserFromModel converts a models.User object into a modelsx.User object
 func UserFromModel(u *models.User) *User {
 	user := &User{
-		ID:       u.ID,
+		ID:       HashID(u.ID),
 		Password: null.NewString(u.Password, u.Password != ""),
 		Username: null.NewString(u.Username, u.Username != ""),
 		JoinedAt: u.JoinedAt,

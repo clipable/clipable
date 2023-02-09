@@ -22,11 +22,11 @@ var (
 
 // Clip objects represent Clip accounts
 type Clip struct {
-	ID          string      `validate:"-"                  in:"-"           out:"id"                   `
+	ID          HashID      `validate:"-"                  in:"-"           out:"id"                   `
 	Title       string      `validate:"min=2,max=64"       in:"title"       out:"title"                `
 	Description null.String `validate:"omitempty,max=1024" in:"description" out:"description,omitempty"`
 	CreatedAt   time.Time   `validate:"-"                  in:"-"           out:"created_at"           `
-	CreatorID   string      `validate:"-"                  in:"-"           out:"-"                    `
+	CreatorID   HashID      `validate:"-"                  in:"-"           out:"-"                    `
 	Processing  bool        `validate:"-"                  in:"-"           out:"processing"           `
 
 	Creator *User `validate:"-" in:"-" out:"creator"`
@@ -35,11 +35,11 @@ type Clip struct {
 // ToModel converts a modelsx.Clip object to a model.Clip object
 func (u *Clip) ToModel() *models.Clip {
 	return &models.Clip{
-		ID:          u.ID,
+		ID:          int64(u.ID),
 		Title:       u.Title,
 		Description: u.Description,
 		CreatedAt:   u.CreatedAt,
-		CreatorID:   u.CreatorID,
+		CreatorID:   int64(u.CreatorID),
 		Processing:  u.Processing,
 	}
 }
@@ -68,7 +68,7 @@ func (u *Clip) GetUpdateWhitelist() []string {
 		nonNullFields = append(nonNullFields, models.ClipColumns.Description)
 	}
 
-	if u.CreatorID != "" {
+	if u.CreatorID != 0 {
 		nonNullFields = append(nonNullFields, models.ClipColumns.CreatorID)
 	}
 
@@ -78,11 +78,11 @@ func (u *Clip) GetUpdateWhitelist() []string {
 // ClipFromModel converts a models.Clip object into a modelsx.Clip object
 func ClipFromModel(u *models.Clip) *Clip {
 	Clip := &Clip{
-		ID:          u.ID,
+		ID:          HashID(u.ID),
 		Title:       u.Title,
 		Description: u.Description,
 		CreatedAt:   u.CreatedAt,
-		CreatorID:   u.CreatorID,
+		CreatorID:   HashID(u.CreatorID),
 		Processing:  u.Processing,
 	}
 

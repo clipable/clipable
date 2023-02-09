@@ -37,6 +37,8 @@ type Config struct {
 		Port     string
 		User     string
 		Password string
+
+		IDHashKey string
 	}
 }
 

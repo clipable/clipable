@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"webserver/models"
 	"webserver/services"
@@ -21,7 +22,7 @@ func NewClips(db *sql.DB, os services.ObjectStore) services.Clips {
 	return &clips{db, os}
 }
 
-func (c *clips) Find(ctx context.Context, cid string) (*models.Clip, error) {
+func (c *clips) Find(ctx context.Context, cid int64) (*models.Clip, error) {
 	return models.FindClip(ctx, c.db, cid)
 }
 
@@ -29,7 +30,7 @@ func (c *clips) FindMany(ctx context.Context, mods ...qm.QueryMod) (models.ClipS
 	return models.Clips(mods...).All(ctx, c.db)
 }
 
-func (c *clips) Exists(ctx context.Context, cid string) (bool, error) {
+func (c *clips) Exists(ctx context.Context, cid int64) (bool, error) {
 	return models.ClipExists(ctx, c.db, cid)
 }
 
@@ -84,7 +85,7 @@ type clipTx struct {
 }
 
 func (c *clipTx) UploadVideo(ctx context.Context, r io.Reader) (int64, error) {
-	return c.os.PutObject(ctx, c.clip.ID+"/raw", r, -1)
+	return c.os.PutObject(ctx, fmt.Sprintf("%d/raw", c.clip.ID), r, -1)
 }
 
 func (c *clipTx) Commit() error {
@@ -97,7 +98,7 @@ func (c *clipTx) Commit() error {
 
 func (c *clipTx) Rollback() error {
 	if !c.done {
-		if err := c.os.DeleteObject(context.Background(), c.clip.ID+"/raw"); err != nil {
+		if err := c.os.DeleteObject(context.Background(), fmt.Sprintf("%d/raw", c.clip.ID)); err != nil {
 			return err
 		}
 	}

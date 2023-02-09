@@ -5,20 +5,21 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	"github.com/gotd/contrib/http_range"
 )
 
 func (r *Routes) GetStreamFile(w http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
+	vars := vars(req)
 
-	if !r.ObjectStore.HasObject(req.Context(), vars["cid"]+"/"+vars["filename"]) {
+	fullPath := fmt.Sprintf("%d/%s", vars.CID, vars.Filename)
+
+	if !r.ObjectStore.HasObject(req.Context(), fullPath) {
 		http.Error(w, "Not Found", http.StatusNotFound)
 		return
 	}
 
 	// Get the object from the minio server
-	objReader, size, err := r.ObjectStore.GetObject(req.Context(), vars["cid"]+"/"+vars["filename"])
+	objReader, size, err := r.ObjectStore.GetObject(req.Context(), fullPath)
 
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)

@@ -3,6 +3,7 @@ package transcoder
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"io"
 	"math"
 	"os/exec"
@@ -25,14 +26,17 @@ type transcoder struct {
 	*services.Group
 	pool *pool.Pool
 
-	progress cmap.ConcurrentMap[string, int]
+	progress cmap.ConcurrentMap[int64, int]
 }
 
 func New(grp *services.Group, workers int) *transcoder {
 	return &transcoder{
-		pool:     pool.New().WithMaxGoroutines(workers),
-		Group:    grp,
-		progress: cmap.New[int](),
+		pool:  pool.New().WithMaxGoroutines(workers),
+		Group: grp,
+		progress: cmap.NewWithCustomShardingFunction[int64, int](func(key int64) uint32 {
+			// Copilot recommended this i have no idea if its correct
+			return uint32(key % 10)
+		}),
 	}
 }
 
@@ -53,7 +57,7 @@ func (t *transcoder) Queue(ctx context.Context, clip *models.Clip) error {
 	return nil
 }
 
-func (t *transcoder) GetProgress(clipID string) (int, bool) {
+func (t *transcoder) GetProgress(clipID int64) (int, bool) {
 	return t.progress.Get(clipID)
 }
 
@@ -93,13 +97,15 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 
 	log.Infoln("Transcoding video", clip.ID)
 
+	rawURL := fmt.Sprintf("http://127.0.0.1:12786/s3/%d/raw", clip.ID)
+
 	cmd := exec.Command("ffmpeg",
-		"-i", "http://127.0.0.1:12786/s3/"+clip.ID+"/raw",
+		"-i", rawURL,
 		"-ss", "00:00:01",
 		"-s", "1280x720",
 		"-qscale:v", "5",
 		"-frames:v", "1",
-		"http://127.0.0.1:12786/s3/"+clip.ID+"/thumbnail.jpg",
+		fmt.Sprintf("http://127.0.0.1:12786/s3/%d/thumbnail.jpg", clip.ID),
 	)
 
 	_, err := cmd.CombinedOutput()
@@ -110,7 +116,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		return
 	}
 
-	audioStreams, err := CountAudioStreams("http://127.0.0.1:12786/s3/" + clip.ID + "/raw")
+	audioStreams, err := CountAudioStreams(rawURL)
 
 	if err != nil {
 		log.WithError(err).
@@ -118,7 +124,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		return
 	}
 
-	duration, err := GetVideoDuration("http://127.0.0.1:12786/s3/" + clip.ID + "/raw")
+	duration, err := GetVideoDuration(rawURL)
 
 	if err != nil {
 		log.WithError(err).
@@ -127,7 +133,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 	}
 
 	ffmpegArgs := []string{
-		"-i", "http://127.0.0.1:12786/s3/" + clip.ID + "/raw",
+		"-i", rawURL,
 		"-preset", "veryslow",
 		"-keyint_min", "30",
 		"-hls_playlist_type", "vod",
@@ -148,7 +154,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		"-utc_timing_url", "https://time.akamai.com/?iso",
 	}
 
-	ffmpegArgs = append(ffmpegArgs, GetPresetsForVideo("http://127.0.0.1:12786/s3/"+clip.ID+"/raw")...)
+	ffmpegArgs = append(ffmpegArgs, GetPresetsForVideo(rawURL)...)
 
 	if audioStreams > 0 {
 		ffmpegArgs = append(ffmpegArgs, "-map", "0:a")
@@ -170,7 +176,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 
 	ffmpegArgs = append(ffmpegArgs,
 		"-f", "dash",
-		"http://127.0.0.1:12786/s3/"+clip.ID+"/dash.mpd",
+		fmt.Sprintf("http://127.0.0.1:12786/s3/%d/dash.mpd", clip.ID),
 	)
 
 	cmd = exec.Command("ffmpeg", ffmpegArgs...)
@@ -204,7 +210,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 
 	log.Infoln("Finished transcoding video", clip.ID)
 
-	if err := t.ObjectStore.DeleteObject(ctx, clip.ID+"/raw"); err != nil {
+	if err := t.ObjectStore.DeleteObject(ctx, fmt.Sprintf("%d/raw", clip.ID)); err != nil {
 		log.WithError(err).
 			Error("Error deleting raw video")
 		return

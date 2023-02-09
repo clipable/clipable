@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 	"webserver/models"
+	"webserver/modelsx"
 
 	"github.com/araddon/dateparse"
 	"github.com/gorilla/csrf"
@@ -49,7 +50,7 @@ func (r *Routes) Auth(handler func(u *models.User, r *http.Request) (int, []byte
 		raw, ok := s.Values[SESSION_KEY_ID]
 
 		if ok {
-			user, err = r.Users.Find(req.Context(), raw.(string))
+			user, err = r.Users.Find(req.Context(), raw.(int64))
 
 			if err != nil {
 				resp.WriteHeader(http.StatusUnauthorized)
@@ -96,8 +97,9 @@ func (r *Routes) Auth(handler func(u *models.User, r *http.Request) (int, []byte
 }
 
 type RouteVars struct {
-	UID string
-	CID string
+	UID      int64
+	CID      int64
+	Filename string
 }
 
 type key int
@@ -107,11 +109,35 @@ const VarKey = key(0)
 func (r *Routes) ParseVars(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		vars := mux.Vars(req)
+		var err error
 
 		rv := &RouteVars{}
 
-		rv.UID, _ = vars["uid"]
-		rv.CID, _ = vars["cid"]
+		if uid, ok := vars["uid"]; ok {
+			rv.UID, err = modelsx.HashDecodeSingle(uid)
+
+			if err != nil {
+				log.WithError(err).Errorln("Failed to decode uid")
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Invalid UID"))
+				return
+			}
+		}
+
+		if cid, ok := vars["cid"]; ok {
+			rv.CID, err = modelsx.HashDecodeSingle(cid)
+
+			if err != nil {
+				log.WithError(err).Errorln("Failed to decode cid")
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Invalid CID"))
+				return
+			}
+		}
+
+		if filename, ok := vars["filename"]; ok {
+			rv.Filename = filename
+		}
 
 		next.ServeHTTP(w, req.WithContext(
 			context.WithValue(req.Context(), VarKey, rv),

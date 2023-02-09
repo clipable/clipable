@@ -57,7 +57,7 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 
 	mdlw := middleware.New(middleware.Config{
 		Recorder: metrics.NewRecorder(metrics.Config{
-			ServiceLabel: "webserver",
+			ServiceLabel: "clipable",
 		}),
 	})
 
@@ -84,20 +84,20 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 	endpoint("/users/search", r.Auth(r.SearchUsers), http.MethodGet)
 	endpoint("/users/me", r.Auth(r.GetCurrentUser), http.MethodGet)
 	endpoint("/users", r.Auth(r.GetUsers), http.MethodGet)
-	endpoint("/users/{uid:[a-fA-F0-9-]{36}}", r.Auth(r.GetUser), http.MethodGet)
-	endpoint("/users/{uid:[a-fA-F0-9-]{36}}", r.Auth(r.UpdateUser), http.MethodPatch)
+	endpoint("/users/{uid:[a-zA-Z0-9-]{4,}}", r.Auth(r.GetUser), http.MethodGet)
+	endpoint("/users/{uid:[a-zA-Z0-9-]{4,}}", r.Auth(r.UpdateUser), http.MethodPatch)
 
 	// CLIP ENDPOINTS
 	endpoint("/clips", r.Auth(r.UploadClip), http.MethodPost)
 	endpoint("/clips", r.Auth(r.GetClips), http.MethodGet)
-	endpoint("/clips/{cid:[a-fA-F0-9-]{36}}", r.Auth(r.GetClip), http.MethodGet)
-	endpoint("/clips/{cid:[a-fA-F0-9-]{36}}/progress", r.Auth(r.GetClipProgress), http.MethodGet)
-	endpoint("/clips/{cid:[a-fA-F0-9-]{36}}", r.Auth(r.UpdateClip), http.MethodPatch)
-	endpoint("/clips/{cid:[a-fA-F0-9-]{36}}", r.Auth(r.DeleteClip), http.MethodDelete)
+	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}", r.Auth(r.GetClip), http.MethodGet)
+	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}/progress", r.Auth(r.GetClipProgress), http.MethodGet)
+	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}", r.Auth(r.UpdateClip), http.MethodPatch)
+	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}", r.Auth(r.DeleteClip), http.MethodDelete)
 	endpoint("/clips/search", r.Auth(r.SearchClips), http.MethodGet)
 
 	// MPEG-DASH ENDPOINTS
-	endpoint("/clips/{cid:[a-fA-F0-9-]{36}}/{filename}", r.GetStreamFile, http.MethodGet)
+	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}/{filename}", r.GetStreamFile, http.MethodGet)
 
 	if cfg.CORS.Enabled {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{

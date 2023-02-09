@@ -33,7 +33,7 @@ func (r *Routes) UpdateUser(user *models.User, req *http.Request) (int, []byte, 
 		return http.StatusBadRequest, []byte(err.Error()), nil
 	}
 
-	updateUser.ID = vars.UID
+	updateUser.ID = modelsx.HashID(vars.UID)
 
 	model := updateUser.ToModel()
 

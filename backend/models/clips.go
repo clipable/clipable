@@ -24,10 +24,10 @@ import (
 
 // Clip is an object representing the database table.
 type Clip struct {
-	ID          string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ID          int64       `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Title       string      `boil:"title" json:"title" toml:"title" yaml:"title"`
 	Description null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
-	CreatorID   string      `boil:"creator_id" json:"creator_id" toml:"creator_id" yaml:"creator_id"`
+	CreatorID   int64       `boil:"creator_id" json:"creator_id" toml:"creator_id" yaml:"creator_id"`
 	Processing  bool        `boil:"processing" json:"processing" toml:"processing" yaml:"processing"`
 	CreatedAt   time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 
@@ -68,6 +68,29 @@ var ClipTableColumns = struct {
 }
 
 // Generated where
+
+type whereHelperint64 struct{ field string }
+
+func (w whereHelperint64) EQ(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint64) NEQ(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint64) LT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint64) LTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint64) GT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint64) GTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+func (w whereHelperint64) IN(slice []int64) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
+}
+func (w whereHelperint64) NIN(slice []int64) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
+}
 
 type whereHelperstring struct{ field string }
 
@@ -161,17 +184,17 @@ func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
 }
 
 var ClipWhere = struct {
-	ID          whereHelperstring
+	ID          whereHelperint64
 	Title       whereHelperstring
 	Description whereHelpernull_String
-	CreatorID   whereHelperstring
+	CreatorID   whereHelperint64
 	Processing  whereHelperbool
 	CreatedAt   whereHelpertime_Time
 }{
-	ID:          whereHelperstring{field: "\"clips\".\"id\""},
+	ID:          whereHelperint64{field: "\"clips\".\"id\""},
 	Title:       whereHelperstring{field: "\"clips\".\"title\""},
 	Description: whereHelpernull_String{field: "\"clips\".\"description\""},
-	CreatorID:   whereHelperstring{field: "\"clips\".\"creator_id\""},
+	CreatorID:   whereHelperint64{field: "\"clips\".\"creator_id\""},
 	Processing:  whereHelperbool{field: "\"clips\".\"processing\""},
 	CreatedAt:   whereHelpertime_Time{field: "\"clips\".\"created_at\""},
 }
@@ -680,7 +703,7 @@ func Clips(mods ...qm.QueryMod) clipQuery {
 
 // FindClip retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindClip(ctx context.Context, exec boil.ContextExecutor, iD string, selectCols ...string) (*Clip, error) {
+func FindClip(ctx context.Context, exec boil.ContextExecutor, iD int64, selectCols ...string) (*Clip, error) {
 	clipObj := &Clip{}
 
 	sel := "*"
@@ -1193,7 +1216,7 @@ func (o *ClipSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) er
 }
 
 // ClipExists checks if the Clip row exists.
-func ClipExists(ctx context.Context, exec boil.ContextExecutor, iD string) (bool, error) {
+func ClipExists(ctx context.Context, exec boil.ContextExecutor, iD int64) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"clips\" where \"id\"=$1 limit 1)"
 

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 	"webserver/config"
+	"webserver/modelsx"
 	"webserver/routes"
 
 	"github.com/gorilla/sessions"
@@ -63,6 +64,8 @@ func New(cfg *config.Config) (*Server, error) {
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		return nil, err
 	}
+
+	modelsx.SetHashEncoder(cfg.DB.IDHashKey)
 
 	cookieStore := sessions.NewCookieStore([]byte(cfg.Cookie.Key), []byte(cfg.Cookie.Key))
 	cookieStore.Options.SameSite = http.SameSiteLaxMode

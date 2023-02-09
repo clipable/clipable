@@ -23,7 +23,7 @@ import (
 
 // User is an object representing the database table.
 type User struct {
-	ID       string    `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ID       int64     `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Username string    `boil:"username" json:"username" toml:"username" yaml:"username"`
 	Password string    `boil:"password" json:"password" toml:"password" yaml:"password"`
 	JoinedAt time.Time `boil:"joined_at" json:"joined_at" toml:"joined_at" yaml:"joined_at"`
@@ -59,12 +59,12 @@ var UserTableColumns = struct {
 // Generated where
 
 var UserWhere = struct {
-	ID       whereHelperstring
+	ID       whereHelperint64
 	Username whereHelperstring
 	Password whereHelperstring
 	JoinedAt whereHelpertime_Time
 }{
-	ID:       whereHelperstring{field: "\"user\".\"id\""},
+	ID:       whereHelperint64{field: "\"user\".\"id\""},
 	Username: whereHelperstring{field: "\"user\".\"username\""},
 	Password: whereHelperstring{field: "\"user\".\"password\""},
 	JoinedAt: whereHelpertime_Time{field: "\"user\".\"joined_at\""},
@@ -577,7 +577,7 @@ func Users(mods ...qm.QueryMod) userQuery {
 
 // FindUser retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindUser(ctx context.Context, exec boil.ContextExecutor, iD string, selectCols ...string) (*User, error) {
+func FindUser(ctx context.Context, exec boil.ContextExecutor, iD int64, selectCols ...string) (*User, error) {
 	userObj := &User{}
 
 	sel := "*"
@@ -1076,7 +1076,7 @@ func (o *UserSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) er
 }
 
 // UserExists checks if the User row exists.
-func UserExists(ctx context.Context, exec boil.ContextExecutor, iD string) (bool, error) {
+func UserExists(ctx context.Context, exec boil.ContextExecutor, iD int64) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"user\" where \"id\"=$1 limit 1)"
 
