@@ -1,13 +1,14 @@
 package transcoder
 
 import (
+	"encoding/json"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/samber/lo"
 )
 
 // Resolution is a struct that contains the width and height of a video
@@ -16,6 +17,19 @@ type Quality struct {
 	Height    int
 	Bitrate   float32
 	Framerate int
+}
+
+type VideoInfo struct {
+	Streams []StreamInfo `json:"streams"`
+}
+
+type StreamInfo struct {
+	Width      int    `json:"width"`
+	Height     int    `json:"height"`
+	Index      int    `json:"index"`
+	CodecType  string `json:"codec_type"`
+	RFrameRate string `json:"r_frame_rate"`
+	Duration   string `json:"duration"`
 }
 
 // https://support.google.com/youtube/answer/1722171?hl=en#zippy=%2Cbitrate
@@ -44,41 +58,42 @@ func bitString(bitrate float32) string {
 	return strconv.FormatFloat(float64(bitrate), 'f', 1, 64) + "M"
 }
 
-func getVideoStats(file string) (int, int, int, error) {
-	cmd := exec.Command("ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height,r_frame_rate", "-of", "csv=s=x:p=0", file)
+func GetVideoStats(file string) (width int, height int, fps int, duration time.Duration, audioStreams int, err error) {
+	cmd := exec.Command("ffprobe", "-v", "error", "-show_entries", "stream=width,height,r_frame_rate,index,codec_type,duration", "-sexagesimal", "-of", "json", file)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return 0, 0, 0, err
+		return 0, 0, 0, 0, 0, err
 	}
 
-	resolution := strings.Split(string(out), "x")
-	width, err := strconv.Atoi(resolution[0])
-	if err != nil {
-		return 0, 0, 0, err
-	}
+	var info VideoInfo
 
-	height, err := strconv.Atoi(resolution[1])
-	if err != nil {
-		return 0, 0, 0, err
-	}
-
-	fps, err := strconv.Atoi(strings.Split(resolution[2], "/")[0])
+	err = json.Unmarshal(out, &info)
 
 	if err != nil {
-		return 0, 0, 0, err
+		return 0, 0, 0, 0, 0, err
 	}
 
-	return width, height, fps, nil
-}
+	videoStream, ok := lo.Find(info.Streams, func(s StreamInfo) bool { return s.CodecType == "video" })
 
-func CountAudioStreams(file string) (int, error) {
-	cmd := exec.Command("ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=index", "-of", "csv=s=x:p=0", file)
-	out, err := cmd.CombinedOutput()
+	if !ok {
+		return 0, 0, 0, 0, 0, errors.New("no video stream found")
+	}
+
+	fps, err = strconv.Atoi(strings.Split(videoStream.RFrameRate, "/")[0])
+
 	if err != nil {
-		return 0, err
+		return 0, 0, 0, 0, 0, err
 	}
 
-	return len(strings.Split(strings.TrimSpace(string(out)), "\n")) - 1, nil
+	audioStreams = lo.CountBy(info.Streams, func(s StreamInfo) bool { return s.CodecType == "audio" })
+
+	dur, err := ParseSexagesimal(videoStream.Duration)
+
+	if err != nil {
+		return 0, 0, 0, 0, 0, err
+	}
+
+	return videoStream.Width, videoStream.Height, fps, dur, audioStreams, nil
 }
 
 func ParseSexagesimal(duration string) (time.Duration, error) {
@@ -109,26 +124,7 @@ func ParseSexagesimal(duration string) (time.Duration, error) {
 	return time.Duration(hours)*time.Hour + time.Duration(minutes)*time.Minute + time.Duration(seconds*float64(time.Second)), nil
 }
 
-func GetVideoDuration(file string) (time.Duration, error) {
-	cmd := exec.Command("ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=duration", "-sexagesimal", "-of", "csv=s=x:p=0", file)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to execute "+cmd.String())
-	}
-
-	// out is formatted in HOURS:MM:SS.MICROSECONDS ex: 0:00:58.066667
-
-	return ParseSexagesimal(string(out))
-}
-
-func GetPresetsForVideo(file string) []string {
-	width, height, fps, err := getVideoStats(file)
-
-	if err != nil {
-		log.Error(err)
-		return []string{}
-	}
-
+func GetPresets(width int, height int, fps int, audioStreams int) []string {
 	if fps < 30 {
 		fps = 30
 	}

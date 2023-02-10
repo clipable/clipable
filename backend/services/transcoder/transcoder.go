@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"time"
 
 	"webserver/models"
 	"webserver/services"
@@ -61,7 +60,7 @@ func (t *transcoder) GetProgress(clipID int64) (int, bool) {
 	return t.progress.Get(clipID)
 }
 
-func (t *transcoder) reportProgress(pipe io.ReadCloser, clip *models.Clip, duration time.Duration) {
+func (t *transcoder) reportProgress(pipe io.ReadCloser, clip *models.Clip, totalFrames int64) {
 	defer pipe.Close()
 	t.progress.Set(clip.ID, 0)
 
@@ -69,18 +68,18 @@ func (t *transcoder) reportProgress(pipe io.ReadCloser, clip *models.Clip, durat
 	for scanner.Scan() {
 		// Example line: frame=  100 fps=0.0 q=-1.0 size=     128kB time=00:00:03.00 bitrate= 341.0kbits/s speed=1.01e+03x
 		line := scanner.Text()
-		if strings.Contains(line, "time=") {
-			suffixPart := strings.Split(line, "time=")[1]
-			timeString := strings.Split(suffixPart, "bitrate=")[0]
+		if strings.Contains(line, "frame=") {
+			suffixPart := strings.Split(line, "frame=")[1]
+			frameString := strings.Split(suffixPart, "fps=")[0]
 
-			currentTime, err := ParseSexagesimal(timeString)
+			currentframe, err := strconv.Atoi(strings.TrimSpace(frameString))
 			if err != nil {
 				log.WithError(err).Error("Failed to parse frame number")
 				return
 			}
 
 			// Calculate the progress
-			progress := math.Round(float64(currentTime) / float64(duration) * 100.0)
+			progress := math.Round(float64(currentframe) / float64(totalFrames) * 100.0)
 			t.progress.Set(clip.ID, int(progress))
 		}
 	}
@@ -116,28 +115,22 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		return
 	}
 
-	audioStreams, err := CountAudioStreams(rawURL)
+	width, height, fps, duration, audioStreams, err := GetVideoStats(rawURL)
 
 	if err != nil {
 		log.WithError(err).
-			Error("Error counting audio streams")
+			Error("Error getting video stats")
 		return
 	}
 
-	duration, err := GetVideoDuration(rawURL)
-
-	if err != nil {
-		log.WithError(err).
-			Error("Error getting video frame count")
-		return
-	}
+	fmt.Println("Width", width, "Height", height, "FPS", fps, "Duration", duration, "AudioStreams", audioStreams)
 
 	ffmpegArgs := []string{
 		"-i", rawURL,
 		"-preset", "veryslow",
-		"-keyint_min", "30",
+		"-keyint_min", strconv.Itoa(fps),
 		"-hls_playlist_type", "vod",
-		"-g", "30",
+		"-g", strconv.Itoa(fps),
 		"-sc_threshold", "0",
 		"-seg_duration", "1",
 		"-c:v", "libx264",
@@ -151,10 +144,12 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		"-single_file", "1",
 		"-tune", "film",
 		"-x264opts", "no-scenecut",
+		"-streaming", "0",
+		"-movflags", "frag_keyframe+empty_moov",
 		"-utc_timing_url", "https://time.akamai.com/?iso",
 	}
 
-	ffmpegArgs = append(ffmpegArgs, GetPresetsForVideo(rawURL)...)
+	ffmpegArgs = append(ffmpegArgs, GetPresets(width, height, fps, audioStreams)...)
 
 	if audioStreams > 0 {
 		ffmpegArgs = append(ffmpegArgs, "-map", "0:a")
@@ -190,7 +185,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 	}
 
 	// Get the progress of the transcoding from ffmpeg's stderr
-	go t.reportProgress(stderr, clip, duration)
+	go t.reportProgress(stderr, clip, int64(duration.Seconds())*int64(fps))
 
 	err = cmd.Start()
 
