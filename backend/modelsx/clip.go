@@ -28,6 +28,7 @@ type Clip struct {
 	CreatedAt   time.Time   `validate:"-"                  in:"-"           out:"created_at"           `
 	CreatorID   HashID      `validate:"-"                  in:"-"           out:"-"                    `
 	Processing  bool        `validate:"-"                  in:"-"           out:"processing"           `
+	Views       int64       `validate:"-"                  in:"-"           out:"views"                `
 
 	Creator *User `validate:"-" in:"-" out:"creator"`
 }
@@ -41,6 +42,7 @@ func (u *Clip) ToModel() *models.Clip {
 		CreatedAt:   u.CreatedAt,
 		CreatorID:   int64(u.CreatorID),
 		Processing:  u.Processing,
+		Views:       u.Views,
 	}
 }
 
@@ -84,6 +86,7 @@ func ClipFromModel(u *models.Clip) *Clip {
 		CreatedAt:   u.CreatedAt,
 		CreatorID:   HashID(u.CreatorID),
 		Processing:  u.Processing,
+		Views:       u.Views,
 	}
 
 	if u.R != nil {

@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"webserver/models"
 
 	"github.com/gotd/contrib/http_range"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 func (r *Routes) GetStreamFile(w http.ResponseWriter, req *http.Request) {
@@ -27,6 +29,23 @@ func (r *Routes) GetStreamFile(w http.ResponseWriter, req *http.Request) {
 	}
 
 	defer objReader.Close()
+
+	if vars.Filename == "dash.mpd" {
+		// Get the clip to increment views by cid
+		clip, err := r.Clips.Find(req.Context(), vars.CID)
+
+		if err != nil {
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		clip.Views++
+
+		if err := r.Clips.Update(req.Context(), clip, boil.Whitelist(models.ClipColumns.Views)); err != nil {
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+	}
 
 	ranges, err := http_range.ParseRange(req.Header.Get("Range"), size)
 
