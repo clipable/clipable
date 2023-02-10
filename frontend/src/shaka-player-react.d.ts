@@ -1,10 +1,18 @@
 declare module "shaka-player-react" {
   import { Component } from "react";
 
-  interface Props {
-    autoPlay?: boolean;
-    src: string;
+  interface WithRef {
+    ref: MutableRefObject<any>;
+    chromeless?: boolean;
   }
 
-  export default class ShakaPlayer extends Component<Props> {}
+  interface WithVideoSrc {
+    autoPlay?: boolean;
+    src: string;
+    chromeless?: boolean;
+  }
+
+  type Props = WithRef | WithVideoSrc
+
+  export default class ShakaPlayer extends Component<Props> { }
 }
