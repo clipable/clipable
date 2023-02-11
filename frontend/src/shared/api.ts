@@ -44,6 +44,18 @@ export const getUser = async (): Promise<User | undefined> => {
   }
 };
 
+export const register = async (username: string, password: string): Promise<boolean> => {
+  const response = await fetch(`${API_URL}/auth/register`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ username, password }),
+  });
+  return response.ok;
+};
+
 export const login = async (username: string, password: string): Promise<boolean> => {
   const response = await fetch(`${API_URL}/auth/login`, {
     method: "POST",

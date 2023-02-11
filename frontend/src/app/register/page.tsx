@@ -1,90 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useRouter } from "next/navigation";
-import Alert from "../../shared/alert";
-
-enum State {
-  Idle,
-  Error,
-  Success,
-  Uploading,
-}
+import { register } from "@/shared/api";
+import { UserContext } from "@/context/user-context";
 
 export default function Home() {
-  const multiPartForm = new FormData();
-
   const router = useRouter();
-  
-  const [state, setState] = useState<State>(State.Idle);
+  const userContext = useContext(UserContext);
+
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
 
-  const uploadVideo = async () => {};
+  const registerUser = async () => {
+    const ok = await register(username, password);
+    if (ok) {
+      userContext.reload();
+      router.push("/");
+    };
 
-  const messageBasedOnState = (state: State) => {
-    switch (state) {
-      case State.Error:
-        return "Error uploading video";
-      case State.Success:
-        return "Video uploaded successfully";
-      case State.Uploading:
-        return "Uploading video...";
-      default:
-        return "";
-    }
-  };
-
-  const alertType = (state: State) => {
-    switch (state) {
-      case State.Error:
-        return "error";
-      case State.Success:
-        return "success";
-      case State.Uploading:
-        return "info";
-      default:
-        return "info";
-    }
-  };
-
-  return (
-    <main className="h-screen">
-      <div className="container mx-auto flex flex-col space-y-6 justify-center items-center py-3">
-        {state !== State.Idle && <Alert type={alertType(state)} message={messageBasedOnState(state)} />}
-        <div className="form-control w-full max-w-xs">
-          <label className="label">
-            <span className="label-text">Username</span>
-          </label>
-          <input
-            type="text"
-            placeholder="Username"
-            className="input input-bordered w-full max-w-xs"
-            onChange={(e) => {
-              setUsername(e.target.value);
-            }}
-          />
-          <label className="label">
-            <span className="label-text">Password</span>
-          </label>
-          <input
-            type="text"
-            placeholder="Password"
-            className="input input-bordered w-full max-w-xs"
-            onChange={(e) => {
-              setPassword(e.target.value);
-            }}
-          />
+    return (
+      <main className="h-screen">
+        <div className="container mx-auto flex flex-col space-y-6 justify-center items-center py-3">
+          <div className="form-control w-full max-w-xs">
+            <label className="label">
+              <span className="label-text">Username</span>
+            </label>
+            <input
+              type="text"
+              placeholder="Username"
+              className="input input-bordered w-full max-w-xs"
+              onChange={(e) => {
+                setUsername(e.target.value);
+              }}
+            />
+            <label className="label">
+              <span className="label-text">Password</span>
+            </label>
+            <input
+              type="password"
+              placeholder="Password"
+              className="input input-bordered w-full max-w-xs"
+              onChange={(e) => {
+                setPassword(e.target.value);
+              }}
+            />
+          </div>
+          <button className="btn btn-primary w-full max-w-xs" onClick={registerUser}>
+            Register
+          </button>
         </div>
-        <button
-          className="btn btn-primary w-full max-w-xs"
-          onClick={() => {
-            router.push("/register");
-          }}
-        >
-          Register
-        </button>
-      </div>
-    </main>
-  );
+      </main>
+    );
+  }
 }
