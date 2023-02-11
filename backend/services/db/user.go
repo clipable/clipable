@@ -19,16 +19,24 @@ func NewUsers(db *sql.DB) services.Users {
 	return &users{db}
 }
 
-func (u *users) Find(ctx context.Context, uid string) (*models.User, error) {
+func (u *users) Find(ctx context.Context, uid int64) (*models.User, error) {
 	return models.FindUser(ctx, u.db, uid)
+}
+
+func (u *users) FindUsername(ctx context.Context, username string) (*models.User, error) {
+	return models.Users(models.UserWhere.Username.EQ(username)).One(ctx, u.db)
 }
 
 func (u *users) FindMany(ctx context.Context, mods ...qm.QueryMod) (models.UserSlice, error) {
 	return models.Users(mods...).All(ctx, u.db)
 }
 
-func (u *users) Exists(ctx context.Context, uid string) (bool, error) {
+func (u *users) Exists(ctx context.Context, uid int64) (bool, error) {
 	return models.UserExists(ctx, u.db, uid)
+}
+
+func (u *users) ExistsUsername(ctx context.Context, username string) (bool, error) {
+	return models.Users(models.UserWhere.Username.EQ(username)).Exists(ctx, u.db)
 }
 
 func (u *users) SearchMany(ctx context.Context, query string) (models.UserSlice, error) {

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 	"webserver/models"
+	"webserver/modelsx"
 
 	"github.com/araddon/dateparse"
 	"github.com/gorilla/csrf"
@@ -19,30 +20,46 @@ import (
 // Auth injects the user of a request to the handler
 func (r *Routes) Auth(handler func(u *models.User, r *http.Request) (int, []byte, error)) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
-		s, _ := r.store.Get(req, SESSION_NAME)
+		// TODO: This doeesn't work for some reason, so I'm just going to use the default timeout for now until we can figure out why it returns "feature not supported"
+		//ctr := http.NewResponseController(resp)
+
+		// fmt.Println(time.Now().Add(time.Duration(req.ContentLength/(500*KiB)) * time.Second).Add(1 * time.Second))
+		// // Set a write timeout based on how long if would take to upload the body on a 500/kbps connection + 1 second for empty bodies
+		// if err := ctr.SetReadDeadline(time.Now().Add(time.Duration(req.ContentLength/(500*KiB)) * time.Second).Add(1 * time.Second)); err != nil {
+		// 	log.WithError(err).Errorln("Failed to set read deadline")
+		// }
+		// if err := ctr.SetWriteDeadline(time.Now().Add(time.Duration(req.ContentLength/(500*KiB)) * time.Second).Add(1 * time.Second)); err != nil {
+		// 	log.WithError(err).Errorln("Failed to set write deadline")
+		// }
+
+		s, err := r.store.Get(req, SESSION_NAME)
+
+		if err != nil {
+			log.WithError(err).Errorln("Failed to get session")
+			resp.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
 		// debug print s.Values
 		// for k, v := range s.Values {
 		// 	log.Debugf("s.Values[%s] = %v", k, v)
 		// }
 
+		var user *models.User
+
 		raw, ok := s.Values[SESSION_KEY_ID]
 
-		if !ok {
-			resp.WriteHeader(http.StatusUnauthorized)
-			return
+		if ok {
+			user, err = r.Users.Find(req.Context(), raw.(int64))
+
+			if err != nil {
+				log.WithError(err).Warnln("Failed to find user, old cookie?")
+				delete(s.Values, SESSION_KEY_ID)
+				r.store.Save(req, resp, s)
+			}
 		}
 
-		id := raw.(*ID)
-
-		u, err := r.Users.Find(req.Context(), id.UUID)
-
-		if err != nil {
-			resp.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		code, body, err := handler(u, req)
+		code, body, err := handler(user, req)
 
 		if req.Header.Get("X-CSRF-Token") == "" {
 			resp.Header().Set("X-CSRF-Token", csrf.Token(req))
@@ -50,6 +67,10 @@ func (r *Routes) Auth(handler func(u *models.User, r *http.Request) (int, []byte
 
 		if body != nil && err == nil {
 			resp.Header().Set("Content-Type", "application/json")
+		}
+
+		if e, ok := err.(net.Error); ok && e.Timeout() {
+			code = http.StatusRequestTimeout
 		}
 
 		resp.WriteHeader(code)
@@ -71,13 +92,15 @@ func (r *Routes) Auth(handler func(u *models.User, r *http.Request) (int, []byte
 			log.WithError(err).
 				WithField("Path", req.URL.Path).
 				WithField("Code", code).
-				Errorln("Unhandled exception in route")
+				Warnln("Exception in route")
 		}
 	}
 }
 
 type RouteVars struct {
-	UID string
+	UID      int64
+	CID      int64
+	Filename string
 }
 
 type key int
@@ -87,10 +110,35 @@ const VarKey = key(0)
 func (r *Routes) ParseVars(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		vars := mux.Vars(req)
+		var err error
 
 		rv := &RouteVars{}
 
-		rv.UID, _ = vars["uid"]
+		if uid, ok := vars["uid"]; ok {
+			rv.UID, err = modelsx.HashDecodeSingle(uid)
+
+			if err != nil {
+				log.WithError(err).Errorln("Failed to decode uid")
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Invalid UID"))
+				return
+			}
+		}
+
+		if cid, ok := vars["cid"]; ok {
+			rv.CID, err = modelsx.HashDecodeSingle(cid)
+
+			if err != nil {
+				log.WithError(err).Errorln("Failed to decode cid")
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Invalid CID"))
+				return
+			}
+		}
+
+		if filename, ok := vars["filename"]; ok {
+			rv.Filename = filename
+		}
 
 		next.ServeHTTP(w, req.WithContext(
 			context.WithValue(req.Context(), VarKey, rv),

@@ -4,12 +4,12 @@ package routes
 import (
 	"crypto/tls"
 	"database/sql"
-	"encoding/gob"
 	"net/http"
 	"webserver/config"
 	"webserver/services"
 	"webserver/services/db"
 	"webserver/services/object"
+	"webserver/services/transcoder"
 
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/handlers"
@@ -21,17 +21,17 @@ import (
 	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
 	"github.com/slok/go-http-metrics/middleware"
 	"github.com/slok/go-http-metrics/middleware/std"
-	"golang.org/x/oauth2"
 )
 
 // Routes contain pointers to resources needed in endpoint handlers
 type Routes struct {
 	listeners cmap.ConcurrentMap
 	cfg       *config.Config
-	Router    http.Handler
 	*services.Group
 	store sessions.Store
-	oauth *oauth2.Config
+
+	Router         http.Handler
+	InternalRouter http.Handler
 }
 
 // New configures the handler functions for each API endpoint
@@ -41,31 +41,23 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 		cfg:       cfg,
 		Group:     g,
 		store:     store,
-		oauth: &oauth2.Config{
-			RedirectURL:  cfg.OAuth.RedirectURL,
-			ClientID:     cfg.OAuth.ClientID,
-			ClientSecret: cfg.OAuth.ClientSecret,
-			Scopes:       cfg.OAuth.Scopes,
-			Endpoint: oauth2.Endpoint{
-				AuthURL:  cfg.OAuth.AuthURL,
-				TokenURL: cfg.OAuth.TokenURL,
-			},
-		},
 	}
 
 	router := mux.NewRouter()
-	gob.Register(&ID{})
+	internalRouter := mux.NewRouter()
 
-	router.Use(handlers.RecoveryHandler())
 	router.Use(LoggingMiddleware)
+	internalRouter.Use(LoggingMiddleware)
 	router.Use(r.ParseVars)
-	router.Use(csrf.Protect([]byte(cfg.Cookie.Key), csrf.Path("/api")))
-
+	if !cfg.Debug {
+		router.Use(handlers.RecoveryHandler())
+		router.Use(csrf.Protect([]byte(cfg.Cookie.Key), csrf.Path("/api")))
+	}
 	api := router.PathPrefix("/api").Subrouter()
 
 	mdlw := middleware.New(middleware.Config{
 		Recorder: metrics.NewRecorder(metrics.Config{
-			ServiceLabel: "webserver",
+			ServiceLabel: "clipable",
 		}),
 	})
 
@@ -73,17 +65,39 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 		api.Handle(path, std.Handler(path, mdlw, f)).Methods(method...)
 	}
 
+	internalEndpoint := func(path string, f http.HandlerFunc, method ...string) {
+		internalRouter.Handle(path, f).Methods(method...)
+	}
+
+	// TODO: swap to https://github.com/uptrace/bunrouter?
+
+	// INTERNAL ENDPOINTS
+	internalEndpoint("/s3/{path}/{file}", r.ReadObject, http.MethodGet)
+	internalEndpoint("/s3/{path}/{file}", r.UploadObject, http.MethodPost)
+
 	// AUTH ENDPOINTS
-	endpoint("/auth/login", r.Login, http.MethodGet)
-	endpoint("/auth/callback", r.Callback, http.MethodGet)
+	endpoint("/auth/login", r.Login, http.MethodPost)
+	endpoint("/auth/register", r.Register, http.MethodPost)
 	endpoint("/auth/logout", r.Logout, http.MethodPost)
 
 	// USER ENDPOINTS
 	endpoint("/users/search", r.Auth(r.SearchUsers), http.MethodGet)
 	endpoint("/users/me", r.Auth(r.GetCurrentUser), http.MethodGet)
 	endpoint("/users", r.Auth(r.GetUsers), http.MethodGet)
-	endpoint("/users/{uid:[a-fA-F0-9-]{36}}", r.Auth(r.GetUser), http.MethodGet)
-	endpoint("/users/{uid:[a-fA-F0-9-]{36}}", r.Auth(r.UpdateUser), http.MethodPatch)
+	endpoint("/users/{uid:[a-zA-Z0-9-]{4,}}", r.Auth(r.GetUser), http.MethodGet)
+	endpoint("/users/{uid:[a-zA-Z0-9-]{4,}}", r.Auth(r.UpdateUser), http.MethodPatch)
+
+	// CLIP ENDPOINTS
+	endpoint("/clips", r.Auth(r.UploadClip), http.MethodPost)
+	endpoint("/clips", r.Auth(r.GetClips), http.MethodGet)
+	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}", r.Auth(r.GetClip), http.MethodGet)
+	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}/progress", r.Auth(r.GetClipProgress), http.MethodGet)
+	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}", r.Auth(r.UpdateClip), http.MethodPatch)
+	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}", r.Auth(r.DeleteClip), http.MethodDelete)
+	endpoint("/clips/search", r.Auth(r.SearchClips), http.MethodGet)
+
+	// MPEG-DASH ENDPOINTS
+	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}/{filename}", r.GetStreamFile, http.MethodGet)
 
 	if cfg.CORS.Enabled {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{
@@ -91,7 +105,7 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 		}
 
 		r.Router = cors.New(cors.Options{
-			AllowedOrigins: []string{cfg.CORS.Origin},
+			AllowedOrigins: []string{cfg.CORS.Origin, "https://reference.dashif.org"},
 			AllowedMethods: []string{
 				http.MethodGet,
 				http.MethodPost,
@@ -105,6 +119,8 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 		r.Router = router
 	}
 
+	r.InternalRouter = internalRouter
+
 	return r, nil
 }
 
@@ -114,6 +130,9 @@ func DefaultServiceGroup(cfg *config.Config, sdb *sql.DB, s3 *minio.Client) (*se
 		Users:       db.NewUsers(sdb),
 		ObjectStore: object.NewStore(s3, cfg.S3.Bucket),
 	}
+
+	group.Clips = db.NewClips(sdb, group.ObjectStore)
+	group.Transcoder = transcoder.New(group, 5)
 
 	return group, nil
 }

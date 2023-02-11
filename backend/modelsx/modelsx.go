@@ -7,12 +7,13 @@ import (
 	"errors"
 	"reflect"
 	"strings"
-	"unicode/utf8"
 	"unsafe"
 
 	"github.com/go-playground/validator/v10"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/modern-go/reflect2"
+	log "github.com/sirupsen/logrus"
+	"github.com/speps/go-hashids/v2"
 	"github.com/volatiletech/null/v8"
 )
 
@@ -22,8 +23,49 @@ const (
 	ErrorNotNullViolation = "not_null_violation"
 )
 
+var hashEncoder *hashids.HashID
+
 func init() {
+	SetHashEncoder("default salt")
+
 	jsoniter.RegisterExtension(&NullExtension{})
+	jsoniter.RegisterExtension(&CustomHashExtension{})
+
+}
+
+func SetHashEncoder(salt string) {
+	var err error
+	hashEncoder, err = hashids.NewWithData(&hashids.HashIDData{
+		Alphabet:  hashids.DefaultAlphabet,
+		MinLength: 4,
+		Salt:      salt,
+	})
+
+	if err != nil {
+		log.WithError(err).Fatal("Failed to create hash encoder")
+	}
+}
+
+func HashEncode(id ...int64) (string, error) {
+	return hashEncoder.EncodeInt64(id)
+}
+
+func HashDecodeSingle(encoded string) (int64, error) {
+	nums, err := hashEncoder.DecodeInt64WithError(encoded)
+
+	if err != nil {
+		return 0, err
+	}
+
+	if len(nums) != 1 {
+		return 0, errors.New("invalid hash")
+	}
+
+	return nums[0], nil
+}
+
+func HashDecode(encoded string) ([]int64, error) {
+	return hashEncoder.DecodeInt64WithError(encoded)
 }
 
 // MakeCodec creates a json de/serializer for other types
@@ -45,16 +87,45 @@ func nullValidator(field reflect.Value) interface{} {
 func makeValidator(tagKey string) *validator.Validate {
 	ret := validator.New()
 	ret.RegisterCustomTypeFunc(nullValidator, null.String{}, null.Bool{}, null.Int64{}, null.Time{})
-	ret.RegisterValidation("okSymbol", stringValidator)
 	ret.SetTagName(tagKey)
 
 	return ret
 }
 
-// characterValidator returns true for ascii and extended ascii
-func stringValidator(fl validator.FieldLevel) bool {
-	message := fl.Field().String()
-	return utf8.ValidString(message)
+// TODO: This should be a uint64 but speps didn't feel like adding uint64 support https://github.com/speps/go-hashids/issues/21
+type HashID int64
+
+type CustomHashEncoder struct {
+	Type reflect2.Type
+}
+
+func (e *CustomHashEncoder) IsEmpty(ptr unsafe.Pointer) bool {
+	return e.Type.UnsafeIndirect(ptr).(HashID) == 0
+}
+
+func (e *CustomHashEncoder) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+	id, err := HashEncode(int64(e.Type.UnsafeIndirect(ptr).(HashID)))
+
+	if err != nil {
+		log.WithError(err).Error("Failed to encode hash")
+		return
+	}
+
+	stream.WriteString(id)
+}
+
+type CustomHashExtension struct {
+	jsoniter.DummyExtension
+}
+
+func (ne *CustomHashExtension) CreateEncoder(t reflect2.Type) jsoniter.ValEncoder {
+	if strings.HasPrefix(t.String(), "modelsx.HashID") {
+		return &CustomHashEncoder{
+			Type: t,
+		}
+	}
+
+	return nil
 }
 
 // NullExtension is a helper type enabling creating customized json encoders

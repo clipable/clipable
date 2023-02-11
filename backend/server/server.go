@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 	"webserver/config"
+	"webserver/modelsx"
 	"webserver/routes"
 
 	"github.com/gorilla/sessions"
@@ -57,15 +58,17 @@ func New(cfg *config.Config) (*Server, error) {
 		return nil, err
 	}
 
-	//fmt.Println(m.Force(6))
-	//fmt.Println(m.Down())
+	// Only uncomment this if you need to wipe the db
+	// fmt.Println(m.Force(2))
+	// fmt.Println(m.Down())
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		return nil, err
 	}
 
+	modelsx.SetHashEncoder(cfg.DB.IDHashKey)
+
 	cookieStore := sessions.NewCookieStore([]byte(cfg.Cookie.Key), []byte(cfg.Cookie.Key))
 	cookieStore.Options.SameSite = http.SameSiteLaxMode
-	cookieStore.Options.Path = "/api"
 	cookieStore.Options.Domain = cfg.Cookie.Domain
 	cookieStore.MaxAge(int((30 * (24 * time.Hour)).Seconds())) // 30 Days
 
@@ -105,14 +108,16 @@ func (s *Server) Start() error {
 	log.Infoln("Listening on", s.cfg.ListenAddr, "and", s.cfg.MetricsListenAddr)
 
 	go http.ListenAndServe(s.cfg.MetricsListenAddr, promhttp.Handler())
+	go http.ListenAndServe("127.0.0.1:12786", s.routes.InternalRouter)
 
 	srv := &http.Server{
-		Addr:           s.cfg.ListenAddr,
-		Handler:        s.routes.Router,
-		ReadTimeout:    5 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		IdleTimeout:    120 * time.Second,
-		MaxHeaderBytes: 1 * MB,
+		Addr:              s.cfg.ListenAddr,
+		Handler:           s.routes.Router,
+		ReadTimeout:       10 * time.Minute,
+		WriteTimeout:      10 * time.Minute,
+		ReadHeaderTimeout: 2 * time.Second,
+		IdleTimeout:       30 * time.Minute,
+		MaxHeaderBytes:    1 * MB,
 	}
 	return srv.ListenAndServe()
 }

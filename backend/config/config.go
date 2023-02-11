@@ -37,15 +37,8 @@ type Config struct {
 		Port     string
 		User     string
 		Password string
-	}
 
-	OAuth struct {
-		RedirectURL  string
-		ClientID     string
-		ClientSecret string
-		AuthURL      string
-		TokenURL     string
-		Scopes       []string
+		IDHashKey string
 	}
 }
 
