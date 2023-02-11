@@ -23,7 +23,7 @@ export default function Home() {
   console.log(videos);
 
   return (
-    <main className="h-screen">
+    <main className="h-full">
       <div className="container mx-auto py-3">
         <ul role="list" className="grid grid-cols-3 gap-24">
           {videos.map((video) => (

@@ -1,5 +1,6 @@
-import '@/styles/globals.scss';
-import Link from 'next/link';
+import UserContext from "@/context/user-context";
+import "@/styles/globals.scss";
+import Header from "./header";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -10,18 +11,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       */}
       <head />
       <body>
-        <header className="navbar bg-base-300">
-          <nav className="flex px-2 lg:px-8" aria-label="Top">
-            <div className="flex w-full grow justify-between border-b border-indigo-500 py-1 lg:border-none">
-              <div className="flex items-center">
-                <Link href="/">
-                  <span className="dark:text-white font-bold">Clipable</span>
-                </Link>
-              </div>
-            </div>
-          </nav>
-        </header>
-        {children}
+        <UserContext>
+          <Header />
+          {children}
+        </UserContext>
       </body>
     </html>
   );

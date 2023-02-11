@@ -31,3 +31,38 @@ export const getVideos = async (): Promise<Videos[]> => {
   }
   return response.json();
 };
+
+export const getUser = async (): Promise<User | undefined> => {
+  const response = await fetch(`${API_URL}/users/me`, {
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (response.ok) {
+    return response.json();
+  }
+};
+
+export const login = async (username: string, password: string): Promise<boolean> => {
+  const response = await fetch(`${API_URL}/auth/login`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ username, password }),
+  });
+  return response.ok;
+};
+
+export const logout = async (): Promise<boolean> => {
+  const response = await fetch(`${API_URL}/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.ok;
+};
