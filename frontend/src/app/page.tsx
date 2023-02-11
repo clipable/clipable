@@ -20,8 +20,6 @@ export default function Home() {
     getVids();
   }, []);
 
-  console.log(videos);
-
   return (
     <main className="h-full">
       <div className="container mx-auto py-3">

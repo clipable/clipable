@@ -42,8 +42,8 @@ export default function Page({ params }: { params: { id: string } }) {
   //   console.log(player)
   //   loadAsset();
   // }, [controllerRef, params.id]);
-  console.log(videoRef);
-  console.log(params.id);
+  // console.log(videoRef);
+  // console.log(params.id);
 
   return (
     <main className="bg-white dark:bg-black max-w-[70%] mt-6 mx-auto">

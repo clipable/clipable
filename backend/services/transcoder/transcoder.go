@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
 	"webserver/models"
 	"webserver/services"
@@ -60,7 +61,7 @@ func (t *transcoder) GetProgress(clipID int64) (int, bool) {
 	return t.progress.Get(clipID)
 }
 
-func (t *transcoder) reportProgress(pipe io.ReadCloser, clip *models.Clip, totalFrames int64) {
+func (t *transcoder) reportProgress(pipe io.ReadCloser, clip *models.Clip, duration time.Duration) {
 	defer pipe.Close()
 	t.progress.Set(clip.ID, 0)
 
@@ -68,18 +69,18 @@ func (t *transcoder) reportProgress(pipe io.ReadCloser, clip *models.Clip, total
 	for scanner.Scan() {
 		// Example line: frame=  100 fps=0.0 q=-1.0 size=     128kB time=00:00:03.00 bitrate= 341.0kbits/s speed=1.01e+03x
 		line := scanner.Text()
-		if strings.Contains(line, "frame=") {
-			suffixPart := strings.Split(line, "frame=")[1]
-			frameString := strings.Split(suffixPart, "fps=")[0]
+		if strings.Contains(line, "time=") {
+			suffixPart := strings.Split(line, "time=")[1]
+			timeString := strings.Split(suffixPart, "bitrate=")[0]
 
-			currentframe, err := strconv.Atoi(strings.TrimSpace(frameString))
+			currentTime, err := ParseSexagesimal(timeString)
 			if err != nil {
 				log.WithError(err).Error("Failed to parse frame number")
 				return
 			}
 
 			// Calculate the progress
-			progress := math.Round(float64(currentframe) / float64(totalFrames) * 100.0)
+			progress := math.Round(float64(currentTime) / float64(duration) * 100.0)
 			t.progress.Set(clip.ID, int(progress))
 		}
 	}
@@ -185,7 +186,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 	}
 
 	// Get the progress of the transcoding from ffmpeg's stderr
-	go t.reportProgress(stderr, clip, int64(duration.Seconds())*int64(fps))
+	go t.reportProgress(stderr, clip, duration)
 
 	err = cmd.Start()
 

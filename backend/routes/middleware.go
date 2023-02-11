@@ -53,8 +53,9 @@ func (r *Routes) Auth(handler func(u *models.User, r *http.Request) (int, []byte
 			user, err = r.Users.Find(req.Context(), raw.(int64))
 
 			if err != nil {
-				resp.WriteHeader(http.StatusUnauthorized)
-				return
+				log.WithError(err).Warnln("Failed to find user, old cookie?")
+				delete(s.Values, SESSION_KEY_ID)
+				r.store.Save(req, resp, s)
 			}
 		}
 
