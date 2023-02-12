@@ -27,7 +27,7 @@ export default function Home() {
                     {video.processing ? (
                       <div>Processing!</div>
                     ) : (
-                      <img src={`http://localhost:8080/api/clips/${video.id}/thumbnail.jpg`} />
+                      <img src={`/api/clips/${video.id}/thumbnail.jpg`} />
                     )}
                   </figure>
                   <div className={video.processing ? "card-body justify-end" : "card-body"}>
