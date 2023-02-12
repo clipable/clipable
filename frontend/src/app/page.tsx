@@ -30,7 +30,7 @@ export default function Home() {
                 <div className="card card-compact w-96 h-full bg-base-100 shadow-xl min-w-[28rem] min-h-[20rem]">
                   <figure className={video.processing ? "flex-auto grow self-center pt-8 glass w-full h-full" : ""}>
                     {video.processing ?
-                      (<div className="">
+                      (<div>
                         Processing!
                       </div>)
                       : <img src={`http://localhost:8080/api/clips/${video.id}/thumbnail.jpg`} alt="Shoes" />
