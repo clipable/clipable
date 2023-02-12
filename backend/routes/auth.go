@@ -85,7 +85,7 @@ func (r *Routes) Register(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	if exists {
-		resp.WriteHeader(http.StatusBadRequest)
+		resp.WriteHeader(http.StatusConflict)
 		resp.Write([]byte("Username already exists"))
 		return
 	}

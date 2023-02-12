@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Alert from "../../shared/alert";
 
 enum State {
   Idle,
@@ -18,7 +17,7 @@ export default function Home() {
 
   const [state, setState] = useState<State>(State.Idle);
   const [title, setTitle] = useState<string>("");
-  const [progress, setProgress] = useState<number>(0)
+  const [progress, setProgress] = useState<number>(0);
   const [description, setDescription] = useState<string>("");
   const [file, setFile] = useState<File>();
   const [clipId, setClipId] = useState<string>("");
@@ -36,7 +35,7 @@ export default function Home() {
     const req = new XMLHttpRequest();
     req.open("POST", "/api/clips", true);
     req.withCredentials = true;
-  
+
     req.upload.onprogress = (e) => {
       if (e.lengthComputable) {
         setProgress(Math.ceil((e.loaded / e.total) * 100));
@@ -57,7 +56,7 @@ export default function Home() {
     req.send(multiPartForm);
   };
 
-  // A Useeffect hook that loops every 1 second to check progress
+  // A UseEffect hook that loops every 1 second to check progress
   useEffect(() => {
     if (state == State.Queued) {
       setTimeout(checkProgress, 1500);
@@ -67,8 +66,8 @@ export default function Home() {
   const checkProgress = async () => {
     const resp = await fetch(`/api/clips/progress?cid=${clipId}`);
 
-    if (rest.status === 200) {
-      const json = await rest.json();
+    if (resp.status === 200) {
+      const json = await resp.json();
       let progress = json.clips[clipId];
 
       progress = progress === 0 ? 1 : progress;
@@ -80,15 +79,14 @@ export default function Home() {
         setState(State.Encoding);
       }
       setTimeout(checkProgress, 1500);
-    } else if (rest.status == 204) {
+    } else if (resp.status == 204) {
       setState(State.Success);
       // redirect to clip
       router.push(`/clips/${clipId}`);
     }
-
   };
 
-  const textBasedOnState = (state: State) => {
+  const messageBasedOnState = (state: State) => {
     switch (state) {
       case State.Error:
         return "Error uploading video";
@@ -145,15 +143,17 @@ export default function Home() {
             if (e.target.files && e.target.files[0]) {
               setFile(e.target.files[0]);
               if (title === "") {
-                setTitle(e.target.files[0].name)
+                setTitle(e.target.files[0].name);
               }
             }
           }}
         />
         <button className="btn btn-primary w-full max-w-xs" onClick={uploadVideo}>
-          {textBasedOnState(state)}
+          {messageBasedOnState(state)}
         </button>
-        {state !== State.Idle && <progress className="progress progress-accent w-full max-w-xs" value={progress} max="100"  />}
+        {state !== State.Idle && (
+          <progress className="progress progress-accent w-full max-w-xs" value={progress} max="100" />
+        )}
       </div>
     </main>
   );
