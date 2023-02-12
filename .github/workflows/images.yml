@@ -17,7 +17,7 @@ jobs:
         name: Build and Publish latest frontend image
         with:
           github-push-secret: ${{secrets.GITHUB_TOKEN}}
-          docker-image-name: clipable-frontend
+          docker-image-name: ghcr.io/clipable/frontend
           docker-image-tag: latest # optional
           dockerfile-path: ./frontend/Dockerfile # optional
           build-context: ./frontend # optional
@@ -27,7 +27,7 @@ jobs:
         name: Build and Publish latest backend image
         with:
           github-push-secret: ${{secrets.GITHUB_TOKEN}}
-          docker-image-name: clipable-backend
+          docker-image-name: ghcr.io/clipable/backend
           docker-image-tag: latest # optional
           dockerfile-path: ./backend/Dockerfile # optional
           build-context: ./backend # optional
