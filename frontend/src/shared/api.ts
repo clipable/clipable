@@ -16,6 +16,7 @@ export interface Videos {
   created_at: string;
   creator: User;
   views: number;
+  processing: boolean;
 }
 
 // Client only

@@ -27,16 +27,19 @@ export default function Home() {
           {videos.map((video) => (
             <li key={video.id}>
               <Link href={`/clips/${video.id}`}>
-                <div className="card card-compact w-96 bg-base-100 shadow-xl">
-                  <figure>
-                    <img src={`http://localhost:8080/api/clips/${video.id}/thumbnail.jpg`} alt="Shoes" />
+                <div className="card card-compact w-96 h-full bg-base-100 shadow-xl min-w-[28rem] min-h-[20rem]">
+                  <figure className={video.processing ? "flex-auto grow self-center pt-8 glass w-full h-full" : ""}>
+                    {video.processing
+                      ? <div>Processing!</div>
+                      : <img src={`http://localhost:8080/api/clips/${video.id}/thumbnail.jpg`} />
+                    }
                   </figure>
-                  <div className="card-body">
+                  <div className={video.processing ? "card-body justify-end" : "card-body"}>
                     <div className="flex-row flex text-xl">
-                      <div className="container flex card-title"> title: {video.title}</div>
-                      <div className="container flex card-title"> views: {video.views}</div>
+                      <div className="container flex card-title">{video.title}</div>
+                      <div className="container flex card-title justify-end">{video.views}</div>
                     </div>
-                    <p>{video.description}Desc: {video.description}</p>
+                    <p className="grow-0">{video.description}{video.description}</p>
                   </div>
                 </div>
               </Link>
