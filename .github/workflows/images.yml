@@ -17,7 +17,7 @@ jobs:
         name: Build and Publish latest frontend image
         with:
           github-push-secret: ${{secrets.GITHUB_TOKEN}}
-          docker-image-name: frontend
+          docker-image-name: frontend 
           docker-image-tag: latest # optional
           dockerfile-path: ./frontend/Dockerfile # optional
           build-context: ./frontend # optional
