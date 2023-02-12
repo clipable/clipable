@@ -40,7 +40,7 @@ export default function Home() {
     setState(State.UnknownError);
   };
 
-  const messageFromState = (state: State) => {
+  const messageBasedOnState = (state: State) => {
     switch (state) {
       case State.UserExists:
         return "Someone with that name already exists";
@@ -57,7 +57,7 @@ export default function Home() {
     <main className="h-screen">
       <div className="container mx-auto flex flex-col space-y-6 justify-center items-center py-3">
         {state !== State.Idle && (
-          <Alert type={state === State.Success ? "success" : "error"} message={messageFromState(state)} />
+          <Alert type={state === State.Success ? "success" : "error"} message={messageBasedOnState(state)} />
         )}
         <div className="form-control w-full max-w-xs">
           <label className="label">
