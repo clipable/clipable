@@ -5,83 +5,68 @@ services:
     image: postgres:14
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
-    ports:
-      - 5432:5432
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
     volumes:
       - pg_data:/var/lib/postgresql/data
-    networks:
-      - ws_front
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
+      interval: 1s
       timeout: 5s
       retries: 5
 
-  pg_metrics:
-    image: wrouesnel/postgres_exporter
-    networks:
-      - ws_front
+  minio:
+    image: minio/minio
+    volumes:
+      - minio_data:/data
+    # ports:
+    #   - 9001:9001
     environment:
-      - DATA_SOURCE_NAME=postgresql://postgres@postgres:5432/postgres?sslmode=disable
+      - "MINIO_ACCESS_KEY=minio"
+      - "MINIO_SECRET_KEY=myminiokeythatishouldchange123"
+    command: server /data --console-address ":9001"
+
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set clipable http://minio:9000 minio myminiokeythatishouldchange123;
+      /usr/bin/mc mb clipable/clips;
+      exit 0;
+      "
+
+  frontend:
+    build:
+      context: ../frontend
+    ports:
+      - 80:3000
+    depends_on:
+      - backend
 
   backend:
     build:
       context: .
-    labels:
-      - "traefik.docker.network=ws_front"
-      - "traefik.frontend.rule=Host:localhost,127.0.0.1;PathPrefix:/api"
-      - "traefik.port=8080"
-      - "traefik.enable=true"
-    env_file:
-      - .env
-    networks:
-      - ws_front
+    environment:
+      - DEBUG=true
+      - LISTENADDR=:8080
+      - PARALLELTRANSCODES=1
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=postgres
+      - DB_IDHASHKEY=mydbidkeythatishouldchange123
+      # COOKIE_KEY must be 16, 24, or 32 bytes long (AES-128, AES-192, or AES-256)
+      - COOKIE_KEY=mycookiekey12345
+      - COOKIE_DOMAIN=localhost
+      - S3_BUCKET=clips
+      - S3_ACCESS=minio
+      - S3_SECRET=myminiokeythatishouldchange123
+      - S3_ADDRESS=minio:9000
     depends_on:
       postgres:
         condition: service_healthy
 
-  proxy:
-    image: traefik:v1.7-alpine
-    networks:
-      - ws_front
-    ports:
-      - 80:80
-      - 443:443
-      - 8443:8443
-      - 8080:8080
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-
-  grafana:
-    image: grafana/grafana
-    depends_on:
-      - prometheus
-    ports:
-      - 3000:3000
-    volumes:
-       - grafana_data:/var/lib/grafana
-    networks:
-      - ws_front
-
-  prometheus:
-    image: prom/prometheus:v2.1.0
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-    ports:
-      - 9090:9090
-    networks:
-      - ws_front
-
-networks:
-  ws_front:
 volumes:
-  grafana_data: {}
   pg_data: {}
+  minio_data: {}

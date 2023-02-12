@@ -48,7 +48,7 @@ func New() (*Config, error) {
 	cfg := &Config{}
 
 	if err := dotenv.Load(); err != nil {
-		log.Warningln("Failed to load .env, using existing environment variables")
+		log.Warningln("Couldn't find .env, using existing environment variables")
 	}
 
 	if err := envconfig.Process("", cfg); err != nil {
