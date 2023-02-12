@@ -65,14 +65,18 @@ export default function Home() {
   }, [clipId]);
 
   const checkProgress = async () => {
-    const rest = await fetch(`/api/clips/${clipId}/progress`);
+    const rest = await fetch(`/api/clips/progress?cid=${clipId}`);
 
     if (rest.status === 200) {
-      const progress = await rest.json();
-      if (progress.progress > 0) {
-        setProgress(progress.progress);
+      const resp = await rest.json();
+      let progress = resp.clips[clipId];
+
+      progress = progress === 0 ? 1 : progress;
+
+      if (progress > 0) {
+        setProgress(progress);
       }
-      if (state == State.Queued && progress.progress != -1) {
+      if (state == State.Queued && progress != -1) {
         setState(State.Encoding);
       }
       setTimeout(checkProgress, 1500);

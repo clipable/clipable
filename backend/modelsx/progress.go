@@ -7,7 +7,7 @@ import (
 )
 
 type Progress struct {
-	Progress int `json:"progress"`
+	Clips map[HashID]int `json:"clips"`
 }
 
 func (p *Progress) Marshal() (int, []byte, error) {

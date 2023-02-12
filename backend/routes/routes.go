@@ -90,11 +90,11 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 	// CLIP ENDPOINTS
 	endpoint("/clips", r.Auth(r.UploadClip), http.MethodPost)
 	endpoint("/clips", r.Auth(r.GetClips), http.MethodGet)
+	endpoint("/clips/search", r.Auth(r.SearchClips), http.MethodGet)
+	endpoint("/clips/progress", r.Auth(r.GetProgress), http.MethodGet)
 	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}", r.Auth(r.GetClip), http.MethodGet)
-	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}/progress", r.Auth(r.GetClipProgress), http.MethodGet)
 	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}", r.Auth(r.UpdateClip), http.MethodPatch)
 	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}", r.Auth(r.DeleteClip), http.MethodDelete)
-	endpoint("/clips/search", r.Auth(r.SearchClips), http.MethodGet)
 
 	// MPEG-DASH ENDPOINTS
 	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}/{filename}", r.GetStreamFile, http.MethodGet)
@@ -126,13 +126,18 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 
 // DefaultServiceGroup Comment for linter
 func DefaultServiceGroup(cfg *config.Config, sdb *sql.DB, s3 *minio.Client) (*services.Group, error) {
+	var err error
 	group := &services.Group{
 		Users:       db.NewUsers(sdb),
 		ObjectStore: object.NewStore(s3, cfg.S3.Bucket),
 	}
 
 	group.Clips = db.NewClips(sdb, group.ObjectStore)
-	group.Transcoder = transcoder.New(group, 5)
+	group.Transcoder, err = transcoder.New(group, cfg.ParallelTranscodes)
+
+	if err != nil {
+		return nil, err
+	}
 
 	return group, nil
 }

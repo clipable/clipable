@@ -95,6 +95,12 @@ func makeValidator(tagKey string) *validator.Validate {
 // TODO: This should be a uint64 but speps didn't feel like adding uint64 support https://github.com/speps/go-hashids/issues/21
 type HashID int64
 
+func (h HashID) MarshalText() ([]byte, error) {
+	s, err := HashEncode(int64(h))
+
+	return []byte(s), err
+}
+
 type CustomHashEncoder struct {
 	Type reflect2.Type
 }

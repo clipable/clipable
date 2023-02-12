@@ -109,6 +109,7 @@ func (s *Server) Start() error {
 
 	go http.ListenAndServe(s.cfg.MetricsListenAddr, promhttp.Handler())
 	go http.ListenAndServe("127.0.0.1:12786", s.routes.InternalRouter)
+	go s.routes.Transcoder.Start()
 
 	srv := &http.Server{
 		Addr:              s.cfg.ListenAddr,

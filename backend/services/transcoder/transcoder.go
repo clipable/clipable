@@ -14,9 +14,9 @@ import (
 	"webserver/models"
 	"webserver/services"
 
+	"github.com/alitto/pond"
 	cmap "github.com/orcaman/concurrent-map/v2"
 	log "github.com/sirupsen/logrus"
-	"github.com/sourcegraph/conc/pool"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
@@ -24,24 +24,53 @@ import (
 // and stores the output in minio.
 type transcoder struct {
 	*services.Group
-	pool *pool.Pool
+	pool *pond.WorkerPool
 
 	progress cmap.ConcurrentMap[int64, int]
+	started  bool
 }
 
-func New(grp *services.Group, workers int) *transcoder {
-	return &transcoder{
-		pool:  pool.New().WithMaxGoroutines(workers),
+func New(grp *services.Group, workers int) (services.Transcoder, error) {
+	t := &transcoder{
+		pool:  pond.New(workers, 1000),
 		Group: grp,
 		progress: cmap.NewWithCustomShardingFunction[int64, int](func(key int64) uint32 {
 			// Copilot recommended this i have no idea if its correct
 			return uint32(key % 10)
 		}),
+		started: false,
 	}
+
+	// Find all clips that are marked as processing while starting to resume their processing
+	orphanedClips, err := t.Clips.FindMany(context.Background(), models.ClipWhere.Processing.EQ(true))
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, clip := range orphanedClips {
+		if err := t.Queue(context.Background(), clip); err != nil {
+			return nil, err
+		}
+	}
+
+	return t, nil
+}
+
+func (t *transcoder) Start() error {
+	if t.started {
+		return fmt.Errorf("transcoder already started")
+	}
+
+	t.started = true
+
+	return nil
 }
 
 func (t *transcoder) Queue(ctx context.Context, clip *models.Clip) error {
-	t.pool.Go(func() {
+	t.progress.Set(clip.ID, -1)
+
+	t.pool.Submit(func() {
 		defer func() {
 			if v := recover(); v != nil {
 				log.WithField("clip", clip.ID).
@@ -51,8 +80,6 @@ func (t *transcoder) Queue(ctx context.Context, clip *models.Clip) error {
 		}()
 		t.process(ctx, clip)
 	})
-
-	t.progress.Set(clip.ID, -1)
 
 	return nil
 }
@@ -94,6 +121,11 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 	// Example of using ffmpeg map to pipes https://stackoverflow.com/questions/71041370/separate-video-from-audio-from-ffmpeg-stream
 	// syscall pipe: https://www.codeflict.com/go/syscall-pipe
 	// https://support.google.com/youtube/answer/1722171?hl=en#zippy=%2Cbitrate
+
+	// Wait until we're started listen for requests before attempting to launch ffmpeg
+	for !t.started {
+		time.Sleep(1 * time.Second)
+	}
 
 	log.Infoln("Transcoding video", clip.ID)
 
