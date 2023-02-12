@@ -103,9 +103,22 @@ type RouteVars struct {
 	Filename string
 }
 
+type QueryVars struct {
+	CID []int64
+}
+
 type key int
 
 const VarKey = key(0)
+const QueryKey = key(1)
+
+func vars(r *http.Request) *RouteVars {
+	return r.Context().Value(VarKey).(*RouteVars)
+}
+
+func query(r *http.Request) *QueryVars {
+	return r.Context().Value(QueryKey).(*QueryVars)
+}
 
 func (r *Routes) ParseVars(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -140,8 +153,28 @@ func (r *Routes) ParseVars(next http.Handler) http.Handler {
 			rv.Filename = filename
 		}
 
+		qv := &QueryVars{}
+
+		if cids, ok := req.URL.Query()["cid"]; ok {
+			qv.CID = make([]int64, len(cids))
+
+			for i, cid := range cids {
+				qv.CID[i], err = modelsx.HashDecodeSingle(cid)
+
+				if err != nil {
+					log.WithError(err).WithField("CID", cid).Errorln("Failed to decode cid")
+					w.WriteHeader(http.StatusBadRequest)
+					w.Write([]byte("Invalid CID"))
+					return
+				}
+			}
+		}
+
+		ctx := context.WithValue(req.Context(), VarKey, rv)
+		ctx = context.WithValue(ctx, QueryKey, qv)
+
 		next.ServeHTTP(w, req.WithContext(
-			context.WithValue(req.Context(), VarKey, rv),
+			ctx,
 		))
 	})
 }
@@ -162,9 +195,6 @@ func (r *Routes) SDCompliance(next http.Handler) http.Handler {
 	})
 }
 
-func vars(r *http.Request) *RouteVars {
-	return r.Context().Value(VarKey).(*RouteVars)
-}
 func getPaginationMods(req *http.Request, paginationColumn, table, idColumn string) []qm.QueryMod {
 	qms := make([]qm.QueryMod, 0)
 

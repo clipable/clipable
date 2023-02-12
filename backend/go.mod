@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/alexedwards/argon2id v0.0.0-20211130144151-3585854a6387
 	github.com/alexsasharegan/dotenv v0.0.0-20171113213728-090a4d1b5d42
+	github.com/alitto/pond v1.8.3
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/docker/go-units v0.4.0
 	github.com/friendsofgo/errors v0.9.2
@@ -28,7 +29,6 @@ require (
 	github.com/samber/lo v1.37.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/slok/go-http-metrics v0.10.0
-	github.com/sourcegraph/conc v0.2.0
 	github.com/speps/go-hashids/v2 v2.0.1
 	github.com/volatiletech/null/v8 v8.1.2
 	github.com/volatiletech/sqlboiler/v4 v4.14.0
@@ -38,15 +38,10 @@ require (
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/cockroachdb/errors v1.9.0 // indirect
-	github.com/cockroachdb/logtags v0.0.0-20211118104740-dabe8e521a4f // indirect
-	github.com/cockroachdb/redact v1.1.3 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
-	github.com/getsentry/sentry-go v0.13.0 // indirect
 	github.com/go-playground/locales v0.13.0 // indirect
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/gofrs/uuid v4.2.0+incompatible // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/securecookie v1.1.1 // indirect
@@ -61,8 +56,6 @@ require (
 	github.com/jackc/pgtype v1.12.0 // indirect
 	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/klauspost/cpuid/v2 v2.1.0 // indirect
-	github.com/kr/pretty v0.3.0 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/lib/pq v1.10.6 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
@@ -74,9 +67,8 @@ require (
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/rs/xid v1.4.0 // indirect
-	github.com/sourcegraph/sourcegraph/lib v0.0.0-20221216004406-749998a2ac74 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/stretchr/testify v1.8.1 // indirect
 	github.com/volatiletech/inflect v0.0.1 // indirect
 	github.com/volatiletech/randomize v0.0.1 // indirect
 	go.uber.org/atomic v1.10.0 // indirect

@@ -10,9 +10,10 @@ import (
 
 // A Config holds all configurable settings from a yml config file
 type Config struct {
-	Debug             bool   `default:"false"`
-	ListenAddr        string `default:"0.0.0.0:8080"`
-	MetricsListenAddr string `default:"127.0.0.1:9991"`
+	Debug              bool   `default:"false"`
+	ListenAddr         string `default:"0.0.0.0:8080"`
+	MetricsListenAddr  string `default:"127.0.0.1:9991"`
+	ParallelTranscodes int    `default:"1"`
 
 	CORS struct {
 		Origin  string
