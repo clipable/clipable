@@ -31,7 +31,7 @@ export default function Home() {
                   <figure className={video.processing ? "flex-auto grow self-center pt-8 glass w-full h-full" : ""}>
                     {video.processing
                       ? <div>Processing!</div>
-                      : <img src={`http://localhost:8080/api/clips/${video.id}/thumbnail.jpg`} alt="Shoes" />
+                      : <img src={`http://localhost:8080/api/clips/${video.id}/thumbnail.jpg`} />
                     }
                   </figure>
                   <div className={video.processing ? "card-body justify-end" : "card-body"}>
