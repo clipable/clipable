@@ -65,7 +65,7 @@ export default function Home() {
   }, [clipId]);
 
   const checkProgress = async () => {
-    const rest = await fetch(`/api/clips/progress?cid=${clipId}`);
+    const resp = await fetch(`/api/clips/progress?cid=${clipId}`);
 
     if (rest.status === 200) {
       const resp = await rest.json();
