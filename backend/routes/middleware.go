@@ -31,7 +31,6 @@ func (r *Routes) Auth(handler func(u *models.User, r *http.Request) (int, []byte
 		// if err := ctr.SetWriteDeadline(time.Now().Add(time.Duration(req.ContentLength/(500*KiB)) * time.Second).Add(1 * time.Second)); err != nil {
 		// 	log.WithError(err).Errorln("Failed to set write deadline")
 		// }
-
 		s, _ := r.store.Get(req, SESSION_NAME)
 
 		var user *models.User
