@@ -1,15 +1,10 @@
 "use client";
 
 import { getVideos, Videos } from "@/shared/api";
-import { Inter } from "@next/font/google";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
-const inter = Inter({ subsets: ["latin"] });
-
 export default function Home() {
-  const loggedIn = false;
-
   const [videos, setVideos] = useState<Videos[]>([]);
 
   useEffect(() => {
@@ -29,17 +24,20 @@ export default function Home() {
               <Link href={`/clips/${video.id}`}>
                 <div className="card card-compact w-96 h-full bg-base-100 shadow-xl min-w-[28rem] min-h-[20rem]">
                   <figure className={video.processing ? "flex-auto grow self-center pt-8 glass w-full h-full" : ""}>
-                    {video.processing
-                      ? <div>Processing!</div>
-                      : <img src={`http://localhost:8080/api/clips/${video.id}/thumbnail.jpg`} />
-                    }
+                    {video.processing ? (
+                      <div>Processing!</div>
+                    ) : (
+                      <img src={`http://localhost:8080/api/clips/${video.id}/thumbnail.jpg`} />
+                    )}
                   </figure>
                   <div className={video.processing ? "card-body justify-end" : "card-body"}>
                     <div className="flex-row flex text-xl">
                       <div className="container flex card-title">{video.title}</div>
                       <div className="container flex card-title justify-end">{video.views}</div>
                     </div>
-                    <p className="grow-0">{video.description}{video.description}</p>
+                    <p className="grow-0">
+                      {video.description}
+                    </p>
                   </div>
                 </div>
               </Link>
