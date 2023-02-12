@@ -68,8 +68,8 @@ export default function Home() {
     const resp = await fetch(`/api/clips/progress?cid=${clipId}`);
 
     if (rest.status === 200) {
-      const resp = await rest.json();
-      let progress = resp.clips[clipId];
+      const json = await rest.json();
+      let progress = json.clips[clipId];
 
       progress = progress === 0 ? 1 : progress;
 
