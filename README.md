@@ -49,7 +49,7 @@ View the [features](https://github.com/clipable/clipable/blob/master/README.md#f
 - [x] Fuzzy video searching
 - [x] Intuitive and simple user interface
 - [x] Well-documented and accessible REST API
-- [x] FFmpeg based ennscoding accepts all well known video formats
+- [x] FFmpeg based encoding accepts all well known video formats
 - [x] Simple docker based deployment
 
 <h2><img height="20" src="./.assets/icon.png">&nbsp;&nbsp;Installation</h2>
