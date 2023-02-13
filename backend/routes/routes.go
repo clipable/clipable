@@ -74,6 +74,7 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 	// INTERNAL ENDPOINTS
 	internalEndpoint("/s3/{path}/{file}", r.ReadObject, http.MethodGet)
 	internalEndpoint("/s3/{path}/{file}", r.UploadObject, http.MethodPost)
+	internalEndpoint("/progress/{cid}", r.SetProgress, http.MethodPost)
 
 	// AUTH ENDPOINTS
 	endpoint("/auth/login", r.Login, http.MethodPost)
@@ -133,7 +134,7 @@ func DefaultServiceGroup(cfg *config.Config, sdb *sql.DB, s3 *minio.Client) (*se
 	}
 
 	group.Clips = db.NewClips(sdb, group.ObjectStore)
-	group.Transcoder, err = transcoder.New(group, cfg.ParallelTranscodes)
+	group.Transcoder, err = transcoder.New(cfg, group)
 
 	if err != nil {
 		return nil, err

@@ -10,10 +10,15 @@ import (
 
 // A Config holds all configurable settings from a yml config file
 type Config struct {
-	Debug              bool   `default:"false"`
-	ListenAddr         string `default:"0.0.0.0:8080"`
-	MetricsListenAddr  string `default:"127.0.0.1:9991"`
-	ParallelTranscodes int    `default:"1"`
+	Debug             bool   `default:"false"`
+	ListenAddr        string `default:"0.0.0.0:8080"`
+	MetricsListenAddr string `default:"127.0.0.1:9991"`
+
+	FFmpeg struct {
+		Concurrency int    `default:"1"`
+		Preset      string `default:"medium"` // https://trac.ffmpeg.org/wiki/Encode/H.264#:~:text=preset%20and%20tune-,Preset,-A%20preset%20is
+		Tune        string `default:"film"`   // https://trac.ffmpeg.org/wiki/Encode/H.264#:~:text=x264%20%2D%2Dfullhelp.-,Tune,-You%20can%20optionally
+	}
 
 	CORS struct {
 		Origin  string

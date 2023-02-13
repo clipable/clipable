@@ -28,8 +28,8 @@ export default function VideoCard({ video }: Props) {
         <div className="flex flex-col text-xl">
           <div className="truncate card-title">{video.title}</div>
           <div className="flex flex-row w-full justify-between space-x-2">
-            <div className="justify-end mt-2 text-stone-400 text-base">{formatViewsCount(video.views)} views</div>
-            <div className="justify-end mt-2 text-stone-400 text-base">{formatDate(video.created_at)}</div>
+            <div className="mt-2 text-stone-400 text-base">{formatViewsCount(video.views)} view{video.views === 1 ? '' : 's'}</div>
+            <div className="mt-2 text-stone-400 text-base">{formatDate(video.created_at)}</div>
           </div>
         </div>
       </div>

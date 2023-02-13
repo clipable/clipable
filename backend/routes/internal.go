@@ -1,15 +1,77 @@
 package routes
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/gotd/contrib/http_range"
 	log "github.com/sirupsen/logrus"
 )
+
+// Body looks like:
+// frame=686
+// fps=74.23
+// stream_0_0_q=29.0
+// bitrate=N/A
+// total_size=N/A
+// out_time_us=19466732
+// out_time_ms=19466732
+// out_time=00:00:19.466732
+// dup_frames=0
+// drop_frames=682
+// speed=2.11x
+// progress=continue
+func (r *Routes) SetProgress(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+
+	cid, err := strconv.ParseInt(vars["cid"], 10, 64)
+
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		log.WithError(err).Error("Failed to parse cid")
+		return
+	}
+
+	reader := bufio.NewScanner(req.Body)
+
+	data := make(map[string]string)
+
+	for reader.Scan() {
+		line := reader.Text()
+		if line == "" {
+			continue
+		}
+
+		parts := strings.Split(line, "=")
+
+		if len(parts) != 2 {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			log.WithField("line", line).Error("Failed to parse line")
+			return
+		}
+
+		data[parts[0]] = parts[1]
+
+		if parts[0] == "progress" {
+			// Get the current progress
+			frame, err := strconv.Atoi(data["frame"])
+
+			if err != nil {
+				http.Error(w, "Bad Request", http.StatusBadRequest)
+				log.WithError(err).Error("Failed to parse frame")
+				return
+			}
+
+			r.Transcoder.ReportProgress(cid, frame)
+		}
+	}
+}
 
 func (r *Routes) UploadObject(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)

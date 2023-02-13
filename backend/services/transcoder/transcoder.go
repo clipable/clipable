@@ -1,16 +1,14 @@
 package transcoder
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"io"
 	"math"
 	"os/exec"
 	"strconv"
-	"strings"
 	"time"
 
+	"webserver/config"
 	"webserver/models"
 	"webserver/services"
 
@@ -24,17 +22,24 @@ import (
 // and stores the output in minio.
 type transcoder struct {
 	*services.Group
+	cfg  *config.Config
 	pool *pond.WorkerPool
 
-	progress cmap.ConcurrentMap[int64, int]
+	progress cmap.ConcurrentMap[int64, *clipProgress]
 	started  bool
 }
 
-func New(grp *services.Group, workers int) (services.Transcoder, error) {
+type clipProgress struct {
+	maxFrames    int
+	currentFrame int
+}
+
+func New(cfg *config.Config, grp *services.Group) (services.Transcoder, error) {
 	t := &transcoder{
-		pool:  pond.New(workers, 1000),
+		pool:  pond.New(cfg.FFmpeg.Concurrency, 1000),
+		cfg:   cfg,
 		Group: grp,
-		progress: cmap.NewWithCustomShardingFunction[int64, int](func(key int64) uint32 {
+		progress: cmap.NewWithCustomShardingFunction[int64, *clipProgress](func(key int64) uint32 {
 			// Copilot recommended this i have no idea if its correct
 			return uint32(key % 10)
 		}),
@@ -68,7 +73,10 @@ func (t *transcoder) Start() error {
 }
 
 func (t *transcoder) Queue(ctx context.Context, clip *models.Clip) error {
-	t.progress.Set(clip.ID, -1)
+	t.progress.Set(clip.ID, &clipProgress{
+		maxFrames:    0,
+		currentFrame: -1,
+	})
 
 	t.pool.Submit(func() {
 		defer func() {
@@ -85,34 +93,28 @@ func (t *transcoder) Queue(ctx context.Context, clip *models.Clip) error {
 }
 
 func (t *transcoder) GetProgress(clipID int64) (int, bool) {
-	return t.progress.Get(clipID)
-}
+	prog, ok := t.progress.Get(clipID)
 
-func (t *transcoder) reportProgress(pipe io.ReadCloser, clip *models.Clip, duration time.Duration) {
-	defer pipe.Close()
-	t.progress.Set(clip.ID, 0)
-
-	scanner := bufio.NewScanner(pipe)
-	for scanner.Scan() {
-		// Example line: frame=  100 fps=0.0 q=-1.0 size=     128kB time=00:00:03.00 bitrate= 341.0kbits/s speed=1.01e+03x
-		line := scanner.Text()
-		if strings.Contains(line, "time=") {
-			suffixPart := strings.Split(line, "time=")[1]
-			timeString := strings.Split(suffixPart, "bitrate=")[0]
-
-			currentTime, err := ParseSexagesimal(timeString)
-			if err != nil {
-				log.WithError(err).Error("Failed to parse frame number")
-				return
-			}
-
-			// Calculate the progress
-			progress := math.Round(float64(currentTime) / float64(duration) * 100.0)
-			t.progress.Set(clip.ID, int(progress))
-		}
+	if !ok {
+		return 0, false
 	}
 
-	t.progress.Remove(clip.ID)
+	if prog.currentFrame == -1 {
+		return -1, true
+	}
+
+	// divide current frame by max frames to get progress percentage
+	return int(math.Round(float64(prog.currentFrame) / float64(prog.maxFrames) * 100.0)), true
+}
+
+func (t *transcoder) ReportProgress(clipID int64, currentFrame int) {
+	prog, ok := t.progress.Get(clipID)
+
+	if !ok {
+		return
+	}
+
+	prog.currentFrame = currentFrame
 }
 
 func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
@@ -157,17 +159,19 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 	}
 
 	fmt.Println("Width", width, "Height", height, "FPS", fps, "Duration", duration, "AudioStreams", audioStreams)
+	start := time.Now()
 
 	ffmpegArgs := []string{
 		"-i", rawURL,
-		"-preset", "veryslow",
+		"-preset", t.cfg.FFmpeg.Preset,
+		"-tune", t.cfg.FFmpeg.Tune,
 		"-keyint_min", strconv.Itoa(fps),
 		"-hls_playlist_type", "vod",
 		"-g", strconv.Itoa(fps),
+		"-seg_duration", "2",
 		"-sc_threshold", "0",
-		"-seg_duration", "1",
 		"-c:v", "libx264",
-		"-pix_fmt", "yuv420p",
+		"-pix_fmt", "yuv420p", // TODO: overwrite pix_fmt parameters
 		"-c:a", "aac",
 		"-b:a", "128k",
 		"-ac", "1",
@@ -175,11 +179,11 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		"-use_template", "1",
 		"-use_timeline", "1",
 		"-single_file", "1",
-		"-tune", "film",
 		"-x264opts", "no-scenecut",
 		"-streaming", "0",
 		"-movflags", "frag_keyframe+empty_moov",
 		"-utc_timing_url", "https://time.akamai.com/?iso",
+		"-progress", fmt.Sprintf("http://127.0.0.1:12786/progress/%d", clip.ID),
 	}
 
 	ffmpegArgs = append(ffmpegArgs, GetPresets(width, height, fps, audioStreams)...)
@@ -209,34 +213,26 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 
 	cmd = exec.Command("ffmpeg", ffmpegArgs...)
 
-	stderr, err := cmd.StderrPipe()
+	prog, ok := t.progress.Get(clip.ID)
+
+	if !ok {
+		log.WithField("clip", clip.ID).
+			Error("Error getting progress")
+		return
+	}
+
+	prog.maxFrames = int(math.Round(duration.Seconds() * 30))
+
+	output, err := cmd.CombinedOutput()
 
 	if err != nil {
 		log.WithError(err).
+			WithField("output", string(output)).
 			Error(cmd.String())
 		return
 	}
 
-	// Get the progress of the transcoding from ffmpeg's stderr
-	go t.reportProgress(stderr, clip, duration)
-
-	err = cmd.Start()
-
-	if err != nil {
-		log.WithError(err).
-			Error(cmd.String())
-		return
-	}
-
-	err = cmd.Wait()
-
-	if err != nil {
-		log.WithError(err).
-			Error(cmd.String())
-		return
-	}
-
-	log.Infoln("Finished transcoding video", clip.ID)
+	log.Infoln("Finished transcoding video", clip.ID, "in", time.Since(start))
 
 	if err := t.ObjectStore.DeleteObject(ctx, fmt.Sprintf("%d/raw", clip.ID)); err != nil {
 		log.WithError(err).
