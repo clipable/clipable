@@ -36,16 +36,14 @@ services:
       "
 
   frontend:
-    build:
-      context: ../frontend
+    image: ghcr.io/clipable/frontend:latest
     ports:
       - 80:3000
     depends_on:
       - backend
 
   backend:
-    build:
-      context: .
+    image: ghcr.io/clipable/backend:latest
     environment:
       - DEBUG=true
       - LISTENADDR=:8080
