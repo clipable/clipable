@@ -1,6 +1,5 @@
 "use client";
-import { getUser } from "@/shared/api";
-import { User } from "@/types/user";
+import { getUser, User } from "@/shared/api";
 import React, { createContext, useEffect, useState } from "react";
 
 interface UserContext {
@@ -27,7 +26,7 @@ export default function UserProvider({ children }: { children: React.ReactNode }
       setLoading(true);
       const user = await getUser();
       if (user) {
-        setUser(user as any);
+        setUser(user);
       }
       setLoading(false);
     };

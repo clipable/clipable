@@ -1,15 +1,12 @@
-import { cookies } from "next/headers";
-
 const API_URL = "/api";
 
-interface User {
+export interface User {
   id: string;
-  username?: string;
-  email?: string;
+  username: string;
   joined_at: string;
 }
 
-export interface Videos {
+export interface Video {
   id: string;
   title: string;
   description?: string;
@@ -20,7 +17,7 @@ export interface Videos {
 }
 
 // Client only
-export const getVideos = async (): Promise<Videos[]> => {
+export const getVideos = async (): Promise<Video[]> => {
   const response = await fetch(`${API_URL}/clips`, {
     credentials: "include",
     headers: {
