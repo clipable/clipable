@@ -2,6 +2,8 @@
 
 import clsx from "clsx";
 import { Video } from "@/shared/api";
+import { formatViewsCount } from "./views-formatter";
+import { formatDate } from "./date-formatter";
 
 interface Props {
   video: Video;
@@ -23,11 +25,13 @@ export default function VideoCard({ video }: Props) {
         {video.processing ? <div>Processing!</div> : <img src={`/api/clips/${video.id}/thumbnail.jpg`} />}
       </figure>
       <div className={cardBodyClassname}>
-        <div className="flex-row flex text-xl">
-          <div className="container flex card-title">{video.title}</div>
-          <div className="container flex card-title justify-end">{video.views}</div>
+        <div className="flex flex-col text-xl">
+          <div className="truncate card-title">{video.title}</div>
+          <div className="flex flex-row w-full justify-between space-x-2">
+            <div className="justify-end mt-2 text-stone-400 text-base">{formatViewsCount(video.views)} views</div>
+            <div className="justify-end mt-2 text-stone-400 text-base">{formatDate(video.created_at)}</div>
+          </div>
         </div>
-        <p className="grow-0">{video.description}</p>
       </div>
     </div>
   );
