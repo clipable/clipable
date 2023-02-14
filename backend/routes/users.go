@@ -95,6 +95,33 @@ func (r *Routes) GetCurrentUser(user *models.User, req *http.Request) (int, []by
 	return modelsx.UserFromModel(user).Marshal()
 }
 
+// GetCurrentUserClips returns list of clips created by requesting user
+//
+// # Success returns json array of Clip objects created by requesting User
+//
+// GET /users/me/clips
+func (r *Routes) GetCurrentUsersClips(user *models.User, req *http.Request) (int, []byte, error) {
+	if user == nil {
+		return http.StatusUnauthorized, nil, nil
+	}
+
+	clips, err := r.Clips.FindMany(req.Context(), modelsx.NewBuilder().
+		Add(models.ClipWhere.CreatorID.EQ(user.ID)).
+		Add(getPaginationMods(req, models.ClipColumns.CreatedAt, models.TableNames.Clips, models.ClipColumns.ID)...,
+		)...,
+	)
+
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	if len(clips) == 0 {
+		return http.StatusNoContent, nil, nil
+	}
+
+	return modelsx.ClipFromModelBatch(clips...).Marshal()
+}
+
 // GetUsers returns list of all users available to user
 //
 // # Success returns json array of all User objects available to requesting User
