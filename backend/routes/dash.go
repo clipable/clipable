@@ -74,7 +74,7 @@ func (r *Routes) GetStreamFile(w http.ResponseWriter, req *http.Request) {
 	} else {
 		// Accept ranges
 		w.Header().Set("Accept-Ranges", "bytes")
-		w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", ranges[0].Start, ranges[0].Length, size))
+		w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", ranges[0].Start, ranges[0].Start+ranges[0].Length-1, size))
 
 		// Set the status code
 		w.WriteHeader(http.StatusPartialContent)
