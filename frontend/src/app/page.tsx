@@ -18,7 +18,6 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-
     const getProgress = async () => {
       if (!videos.length) return
       const inProgressVideoIds = videos.filter(video => video.processing).map(video => video.id).join('&cid=')
