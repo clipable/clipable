@@ -22,7 +22,7 @@ export default function Home() {
       if (!videos.length) return
       const inProgressVideoIds = videos.filter(video => video.processing).map(video => video.id).join('&cid=')
       const resp = await fetch(`/api/clips/progress?cid=` + inProgressVideoIds);
-      const {clips} = (await resp.json()) as Progress
+      const { clips } = (await resp.json()) as Progress
       setVideoProgresses(clips)
     }
     const interval = setInterval(getProgress, 1000);
