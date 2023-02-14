@@ -118,7 +118,7 @@ func (r *Routes) ReadObject(w http.ResponseWriter, req *http.Request) {
 
 		// Accept ranges
 		w.Header().Set("Accept-Ranges", "bytes")
-		w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", ranges[0].Start, ranges[0].Length, size))
+		w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", ranges[0].Start, ranges[0].Start+ranges[0].Length-1, size))
 		w.Header().Set("Content-Length", fmt.Sprint(ranges[0].Length))
 
 		// Set the status code
