@@ -16,6 +16,10 @@ export interface Video {
   processing: boolean;
 }
 
+export interface Progress {
+  clips: Record<string, number>
+}
+
 // Client only
 export const getVideos = async (): Promise<Video[]> => {
   const response = await fetch(`${API_URL}/clips`, {
