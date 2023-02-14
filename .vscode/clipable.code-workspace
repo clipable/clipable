@@ -1,6 +1,10 @@
 {
   "folders": [
     {
+      "name": ".github",
+      "path": "../.github"
+    },
+    {
       "name": ".vscode",
       "path": "../.vscode"
     },
