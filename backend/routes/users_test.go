@@ -41,10 +41,10 @@ func TestRoutes_UpdateUser(t *testing.T) {
 				},
 			},
 			user: &models.User{
-				ID: "0-0",
+				ID: 1,
 			},
 			vars: &RouteVars{
-				UID: "0-0",
+				UID: 1,
 			},
 		},
 		{
@@ -54,10 +54,20 @@ func TestRoutes_UpdateUser(t *testing.T) {
 			hasError: false,
 			group:    &services.Group{},
 			user: &models.User{
-				ID: "0-0",
+				ID: 1,
 			},
 			vars: &RouteVars{
-				UID: "0-1",
+				UID: 2,
+			},
+		},
+		{
+			name:     "Deny when not authorized",
+			expected: http.StatusUnauthorized,
+			hasBody:  false,
+			hasError: false,
+			group:    &services.Group{},
+			vars: &RouteVars{
+				UID: 2,
 			},
 		},
 		{
@@ -70,10 +80,10 @@ func TestRoutes_UpdateUser(t *testing.T) {
 			},
 			group: &services.Group{},
 			user: &models.User{
-				ID: "0-0",
+				ID: 1,
 			},
 			vars: &RouteVars{
-				UID: "0-0",
+				UID: 1,
 			},
 		},
 		{
@@ -89,10 +99,10 @@ func TestRoutes_UpdateUser(t *testing.T) {
 				},
 			},
 			user: &models.User{
-				ID: "0-0",
+				ID: 1,
 			},
 			vars: &RouteVars{
-				UID: "0-0",
+				UID: 1,
 			},
 		},
 	}
@@ -103,7 +113,7 @@ func TestRoutes_UpdateUser(t *testing.T) {
 				Group: tt.group,
 			}
 
-			body, _ := modelsx.UserSerializeSelf.Marshal(tt.payload)
+			body, _ := modelsx.UserSerialize.Marshal(tt.payload)
 
 			req := httptest.NewRequest("GET", "/", bytes.NewReader(body))
 
@@ -143,7 +153,7 @@ func TestRoutes_SearchUsers(t *testing.T) {
 			group: &services.Group{
 				Users: &mock.UserProvider{
 					SearchManyHook: func(ctx context.Context, query string) (models.UserSlice, error) {
-						return models.UserSlice{&models.User{ID: "0-1"}}, nil
+						return models.UserSlice{&models.User{ID: 2}}, nil
 					},
 				},
 			},
@@ -218,16 +228,16 @@ func TestRoutes_GetUser(t *testing.T) {
 			hasError: false,
 			group: &services.Group{
 				Users: &mock.UserProvider{
-					FindHook: func(ctx context.Context, uid string) (*models.User, error) {
+					FindHook: func(ctx context.Context, uid int64) (*models.User, error) {
 						return &models.User{}, nil
 					},
 				},
 			},
 			user: &models.User{
-				ID: "0-0",
+				ID: 1,
 			},
 			vars: &RouteVars{
-				UID: "0-0",
+				UID: 1,
 			},
 		},
 		{
@@ -237,16 +247,16 @@ func TestRoutes_GetUser(t *testing.T) {
 			hasError: true,
 			group: &services.Group{
 				Users: &mock.UserProvider{
-					FindHook: func(ctx context.Context, uid string) (*models.User, error) {
+					FindHook: func(ctx context.Context, uid int64) (*models.User, error) {
 						return nil, sql.ErrConnDone
 					},
 				},
 			},
 			user: &models.User{
-				ID: "0-0",
+				ID: 1,
 			},
 			vars: &RouteVars{
-				UID: "0-0",
+				UID: 1,
 			},
 		},
 		{
@@ -256,16 +266,16 @@ func TestRoutes_GetUser(t *testing.T) {
 			hasError: false,
 			group: &services.Group{
 				Users: &mock.UserProvider{
-					FindHook: func(ctx context.Context, uid string) (*models.User, error) {
+					FindHook: func(ctx context.Context, uid int64) (*models.User, error) {
 						return nil, sql.ErrNoRows
 					},
 				},
 			},
 			user: &models.User{
-				ID: "0-0",
+				ID: 1,
 			},
 			vars: &RouteVars{
-				UID: "0-0",
+				UID: 1,
 			},
 		},
 	}
@@ -312,7 +322,17 @@ func TestRoutes_GetCurrentUser(t *testing.T) {
 			hasError: false,
 			group:    &services.Group{},
 			user: &models.User{
-				ID: "0-0",
+				ID: 1,
+			},
+		},
+		{
+			name:     "Deny when not authorized",
+			expected: http.StatusUnauthorized,
+			hasBody:  false,
+			hasError: false,
+			group:    &services.Group{},
+			vars: &RouteVars{
+				UID: 2,
 			},
 		},
 	}
@@ -360,7 +380,7 @@ func TestRoutes_GetUsers(t *testing.T) {
 			group: &services.Group{
 				Users: &mock.UserProvider{
 					FindManyHook: func(ctx context.Context, mods ...qm.QueryMod) (models.UserSlice, error) {
-						return models.UserSlice{&models.User{ID: "0-1"}}, nil
+						return models.UserSlice{&models.User{ID: 2}}, nil
 					},
 				},
 			},
