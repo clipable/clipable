@@ -16,8 +16,10 @@ export interface Video {
   processing: boolean;
 }
 
+export type ProgressObject = Record<string, number>;
+
 export interface Progress {
-  clips: Record<string, number>
+  clips: ProgressObject;
 }
 
 // Client only

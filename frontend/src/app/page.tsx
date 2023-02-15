@@ -1,13 +1,13 @@
 "use client";
 
-import { getVideos, Progress, Video } from "@/shared/api";
+import { getVideos, Progress, Video, ProgressObject } from "@/shared/api";
 import VideoCard from "@/shared/video-card";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
 export default function Home() {
   const [videos, setVideos] = useState<Video[]>([]);
-  const [videoProgresses, setVideoProgresses] = useState<Record<string, number>>({})
+  const [videoProgresses, setVideoProgresses] = useState<ProgressObject>({});
 
   useEffect(() => {
     const getVids = async () => {
@@ -18,19 +18,21 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-
     const getProgress = async () => {
-      if (!videos.length) return
-      const inProgressVideoIds = videos.filter(video => video.processing).map(video => video.id).join('&cid=')
+      if (!videos.length) return;
+      const inProgressVideoIds = videos
+        .filter((video) => video.processing)
+        .map((video) => video.id)
+        .join("&cid=");
       const resp = await fetch(`/api/clips/progress?cid=` + inProgressVideoIds);
-      const {clips} = (await resp.json()) as Progress
-      setVideoProgresses(clips)
-    }
+      const { clips } = (await resp.json()) as Progress;
+      setVideoProgresses(clips);
+    };
     const interval = setInterval(getProgress, 1000);
     return () => clearInterval(interval);
   }, [videos]);
 
-  console.log(videoProgresses)
+  console.log(videoProgresses);
 
   return (
     <main className="h-full">
@@ -38,12 +40,13 @@ export default function Home() {
         <ul role="list" className="grid grid-cols-3 gap-24">
           {videos.map((video) => (
             <li key={video.id}>
-              {video.processing
-                ? <VideoCard video={video} progress={videoProgresses[video.id]}  />
-                : <Link href={`/clips/${video.id}`}>
+              {video.processing ? (
+                <VideoCard video={video} progress={videoProgresses[video.id]} />
+              ) : (
+                <Link href={`/clips/${video.id}`}>
                   <VideoCard video={video} />
                 </Link>
-              }
+              )}
             </li>
           ))}
         </ul>
