@@ -9,7 +9,6 @@ interface Props {
  * Renders the thumbnail of a video or the progress of the video if it is being processed
  */
 export default function VideoCardImage({ progress, videoId }: Props) {
-  
   if (!progress) {
     return <img src={`/api/clips/${videoId}/thumbnail.jpg`} />
   }
