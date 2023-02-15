@@ -32,8 +32,6 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [videos]);
 
-  console.log(videoProgresses);
-
   return (
     <main className="h-full">
       <div className="container mx-auto py-3">
