@@ -72,8 +72,8 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 	// TODO: swap to https://github.com/uptrace/bunrouter?
 
 	// INTERNAL ENDPOINTS
-	internalEndpoint("/s3/{path}/{file}", r.ReadObject, http.MethodGet)
-	internalEndpoint("/s3/{path}/{file}", r.UploadObject, http.MethodPost)
+	internalEndpoint("/s3/{cid}/{file}", r.ReadObject, http.MethodGet)
+	internalEndpoint("/s3/{cid}/{file}", r.UploadObject, http.MethodPost)
 	internalEndpoint("/progress/{cid}", r.SetProgress, http.MethodPost)
 
 	// AUTH ENDPOINTS
@@ -131,7 +131,7 @@ func DefaultServiceGroup(cfg *config.Config, sdb *sql.DB, s3 *minio.Client) (*se
 	var err error
 	group := &services.Group{
 		Users:       db.NewUsers(sdb),
-		ObjectStore: object.NewStore(s3, cfg.S3.Bucket),
+		ObjectStore: object.NewStore(s3, cfg),
 	}
 
 	group.Clips = db.NewClips(sdb, group.ObjectStore)

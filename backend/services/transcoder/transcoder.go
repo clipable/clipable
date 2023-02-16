@@ -181,7 +181,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		"-single_file", "1",
 		"-x264opts", "no-scenecut",
 		"-streaming", "0",
-		"-movflags", "frag_keyframe+empty_moov",
+		"-movflags", "+faststart",
 		"-utc_timing_url", "https://time.akamai.com/?iso",
 		"-progress", fmt.Sprintf("http://127.0.0.1:12786/progress/%d", clip.ID),
 	}
@@ -234,10 +234,15 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 
 	log.Infoln("Finished transcoding video", clip.ID, "in", time.Since(start))
 
-	if err := t.ObjectStore.DeleteObject(ctx, fmt.Sprintf("%d/raw", clip.ID)); err != nil {
+	if err := t.ObjectStore.DeleteObject(ctx, clip.ID, "raw"); err != nil {
 		log.WithError(err).
 			Error("Error deleting raw video")
 		return
+	}
+
+	// Wait until all uploads are flushed and available in S3
+	for t.ObjectStore.HasActiveUploads(ctx, clip.ID) {
+		time.Sleep(500 * time.Millisecond)
 	}
 
 	clip.Processing = false
@@ -247,4 +252,6 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 			Error("Error updating clip")
 		return
 	}
+
+	t.progress.Remove(clip.ID)
 }

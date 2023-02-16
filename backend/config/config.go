@@ -3,6 +3,7 @@ package config
 
 import (
 	"github.com/alexsasharegan/dotenv"
+	"github.com/dustin/go-humanize"
 	"github.com/kelseyhightower/envconfig"
 
 	log "github.com/sirupsen/logrus"
@@ -10,9 +11,11 @@ import (
 
 // A Config holds all configurable settings from a yml config file
 type Config struct {
-	Debug             bool   `default:"false"`
-	ListenAddr        string `default:"0.0.0.0:8080"`
-	MetricsListenAddr string `default:"127.0.0.1:9991"`
+	Debug              bool   `default:"false"`
+	ListenAddr         string `default:"0.0.0.0:8080"`
+	MetricsListenAddr  string `default:"127.0.0.1:9991"`
+	MaxUploadSize      string `default:"5 GB" split_words:"true"`
+	MaxUploadSizeBytes int64  `ignored:"true"` // This is set by the parser to the byte value of MaxUploadSize
 
 	FFmpeg struct {
 		Concurrency int    `default:"1"`
@@ -59,6 +62,14 @@ func New() (*Config, error) {
 	if err := envconfig.Process("", cfg); err != nil {
 		return nil, err
 	}
+
+	// Parse the human readable max upload size into bytes
+	maxUploadSizeBytes, err := humanize.ParseBytes(cfg.MaxUploadSize)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.MaxUploadSizeBytes = int64(maxUploadSizeBytes)
 
 	return cfg, nil
 }
