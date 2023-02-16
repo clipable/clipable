@@ -44,9 +44,6 @@ func (r *Routes) SetProgress(w http.ResponseWriter, req *http.Request) {
 
 	for reader.Scan() {
 		line := reader.Text()
-		if line == "" {
-			continue
-		}
 
 		parts := strings.Split(line, "=")
 
