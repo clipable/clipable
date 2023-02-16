@@ -24,8 +24,22 @@ export default function Home() {
         .filter((video) => video.processing)
         .map((video) => video.id)
         .join("&cid=");
+      if (!inProgressVideoIds) {
+        clearInterval(interval);
+        return; 
+      }
       const resp = await fetch(`/api/clips/progress?cid=` + inProgressVideoIds);
+      if (resp.status === 204) {
+        setVideos(videos.map((video) => {
+          return { ...video, processing: false};
+        }));
+        clearInterval(interval);
+        return;
+      } // No content (no videos in progress)
       const { clips } = (await resp.json()) as Progress;
+      setVideos(videos.map((video) => {
+        return { ...video, processing: video.processing &&  !!clips[video.id] };
+      }));
       setVideoProgresses(clips);
     };
     const interval = setInterval(getProgress, 1000);

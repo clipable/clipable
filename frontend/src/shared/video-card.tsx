@@ -25,7 +25,7 @@ export default function VideoCard({ video, progress }: Props) {
   return (
     <div className="card card-compact w-96 h-full bg-base-100 shadow-xl min-w-[28rem] min-h-[20rem]">
       <figure className={figureClassname}>
-        <VideoCardImage videoId={video.id} progress={progress} />
+        <VideoCardImage video={video} progress={progress} />
       </figure>
       <div className={cardBodyClassname}>
         <div className="flex flex-col text-xl">

@@ -59,7 +59,8 @@ export default function Home() {
   // A UseEffect hook that loops every 1 second to check progress
   useEffect(() => {
     if (state == State.Queued) {
-      setTimeout(checkProgress, 1500);
+      const interval = setInterval(checkProgress, 1000);
+      return () => clearInterval(interval);
     }
   }, [clipId]);
 
@@ -78,7 +79,6 @@ export default function Home() {
       if (state == State.Queued && progress != -1) {
         setState(State.Encoding);
       }
-      setTimeout(checkProgress, 1500);
     } else if (resp.status == 204) {
       setState(State.Success);
       // redirect to clip
@@ -139,11 +139,14 @@ export default function Home() {
         <input
           type="file"
           className="file-input w-full max-w-xs"
+          accept="video/*"
           onChange={(e) => {
             if (e.target.files && e.target.files[0]) {
               setFile(e.target.files[0]);
               if (title === "") {
-                setTitle(e.target.files[0].name);
+                const videoName = e.target.files[0].name
+                const parsedTitle = videoName.split(".").slice(0, -1).join(" ").replace(/_/g, " ");
+                setTitle(parsedTitle);
               }
             }
           }}
