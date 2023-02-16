@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useState } from "react";
+import { FormEvent, useContext, useState } from "react";
 import { useRouter } from "next/navigation";
 import { register } from "@/shared/api";
 import { UserContext } from "@/context/user-context";
@@ -21,7 +21,9 @@ export default function Home() {
   const [username, setUsername] = useState<string | null>(null);
   const [password, setPassword] = useState<string | null>(null);
 
-  const registerUser = async () => {
+  const registerUser = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
     if (!username || !password) return;
     const resp = await register(username, password);
     if (resp.ok) {
@@ -59,31 +61,33 @@ export default function Home() {
         {state !== State.Idle && (
           <Alert type={state === State.Success ? "success" : "error"} message={messageBasedOnState(state)} />
         )}
-        <div className="form-control w-full max-w-xs">
-          <label className="label">
+        <form className="form-control w-full max-w-xs" onSubmit={registerUser} id="registerForm">
+          <label className="label" htmlFor="username">
             <span className="label-text">Username</span>
           </label>
           <input
             type="text"
             placeholder="Username"
+            id="username"
             className="input input-bordered w-full max-w-xs"
             onChange={(e) => {
               setUsername(e.target.value);
             }}
           />
-          <label className="label">
+          <label className="label" htmlFor="password">
             <span className="label-text">Password</span>
           </label>
           <input
             type="password"
             placeholder="Password"
+            id="password"
             className="input input-bordered w-full max-w-xs"
             onChange={(e) => {
               setPassword(e.target.value);
             }}
           />
-        </div>
-        <button className="btn btn-primary w-full max-w-xs" onClick={registerUser}>
+        </form>
+        <button className="btn btn-primary w-full max-w-xs" form="registerForm">
           Register
         </button>
       </div>
