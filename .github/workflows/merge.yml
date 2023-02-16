@@ -1,0 +1,25 @@
+name: Go tests on merge request
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: '1.20.1'
+
+    - name: Install dependencies
+      run: cd backend/ && go mod download
+
+    - name: Run tests in backend/
+      run: cd backend/ && go test -v ./...
