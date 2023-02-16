@@ -42,7 +42,7 @@ export default function Home() {
       }));
       setVideoProgresses(clips);
     };
-    const interval = setInterval(getProgress, 1000);
+    const interval = setInterval(getProgress, 2000);
     return () => clearInterval(interval);
   }, [videos]);
 
