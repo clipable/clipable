@@ -76,9 +76,6 @@ func (r *Routes) GetStreamFile(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Accept-Ranges", "bytes")
 		w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", ranges[0].Start, ranges[0].Start+ranges[0].Length-1, size))
 
-		// Set the status code
-		w.WriteHeader(http.StatusPartialContent)
-
 		// Seek to the start of the range
 		_, err = objReader.Seek(ranges[0].Start, io.SeekStart)
 
@@ -86,6 +83,9 @@ func (r *Routes) GetStreamFile(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
+
+		// Set the status code
+		w.WriteHeader(http.StatusPartialContent)
 
 		io.CopyN(w, objReader, ranges[0].Length)
 		// TODO: Properly handle errors here and ignore if the error is due to the client disconnecting prematurely
