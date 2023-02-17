@@ -72,20 +72,35 @@ func (r *Routes) SetProgress(w http.ResponseWriter, req *http.Request) {
 
 func (r *Routes) UploadObject(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
-	r.ObjectStore.PutObject(context.Background(), vars["path"]+"/"+vars["file"], req.Body, -1)
+	cid, err := strconv.ParseInt(vars["cid"], 10, 64)
+
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		log.WithError(err).Error("Failed to parse cid")
+		return
+	}
+
+	r.ObjectStore.PutObject(context.Background(), cid, vars["file"], req.Body)
 }
 
 func (r *Routes) ReadObject(w http.ResponseWriter, req *http.Request) {
 	// Get the object ID from the URL
 	vars := mux.Vars(req)
+	cid, err := strconv.ParseInt(vars["cid"], 10, 64)
 
-	if !r.ObjectStore.HasObject(context.Background(), vars["path"]+"/"+vars["file"]) {
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		log.WithError(err).Error("Failed to parse cid")
+		return
+	}
+
+	if !r.ObjectStore.HasObject(context.Background(), cid, vars["file"]) {
 		http.Error(w, "Not Found", http.StatusNotFound)
 		return
 	}
 
 	// Get the object from the minio server
-	objReader, size, err := r.ObjectStore.GetObject(context.Background(), vars["path"]+"/"+vars["file"])
+	objReader, size, err := r.ObjectStore.GetObject(context.Background(), cid, vars["file"])
 
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)

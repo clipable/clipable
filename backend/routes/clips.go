@@ -12,7 +12,7 @@ import (
 	"webserver/models"
 	"webserver/modelsx"
 
-	. "github.com/docker/go-units"
+	"github.com/friendsofgo/errors"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
@@ -85,16 +85,16 @@ func (r *Routes) UploadClip(user *models.User, req *http.Request) (int, []byte, 
 	// Always attempt to rollback, even if it succeeds, if the tx is committed, this is a no-op
 	defer tx.Rollback()
 
-	len, err := tx.UploadVideo(req.Context(), io.LimitReader(videoPart, 5*GB))
+	len, err := tx.UploadVideo(req.Context(), io.LimitReader(videoPart, r.cfg.MaxUploadSizeBytes))
 
 	// LimitReader will return io.EOF once the limit is reached, so if we read exactly our limit
 	// there was more data to read, and the video was too large
-	if len == 5*GB {
+	if len == r.cfg.MaxUploadSizeBytes {
 		return http.StatusBadRequest, []byte("Video too large"), nil
 	}
 
 	if err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to upload video")
 	}
 
 	if err := tx.Commit(); err != nil {

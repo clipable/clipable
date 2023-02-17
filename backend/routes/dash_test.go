@@ -3,6 +3,7 @@ package routes
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -70,11 +71,11 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 			},
 			group: &services.Group{
 				ObjectStore: &mock.ObjectStoreProvider{
-					HasObjectHook: func(ctx context.Context, path string) bool {
-						assert.Equal(t, "1/test.mp4", path)
+					HasObjectHook: func(ctx context.Context, cid int64, filename string) bool {
+						assert.Equal(t, "1/test.mp4", fmt.Sprintf("%d/%s", cid, filename))
 						return true
 					},
-					GetObjectHook: func(ctx context.Context, path string) (io.ReadSeekCloser, int64, error) {
+					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
 						return NewNopReadSeekCloser([]byte("test")), 4, nil
 					},
 				},
@@ -98,11 +99,11 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 
 			group: &services.Group{
 				ObjectStore: &mock.ObjectStoreProvider{
-					HasObjectHook: func(ctx context.Context, path string) bool {
-						assert.Equal(t, "1/test.mp4", path)
+					HasObjectHook: func(ctx context.Context, cid int64, filename string) bool {
+						assert.Equal(t, "1/test.mp4", fmt.Sprintf("%d/%s", cid, filename))
 						return true
 					},
-					GetObjectHook: func(ctx context.Context, path string) (io.ReadSeekCloser, int64, error) {
+					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
 						return NewNopReadSeekCloser([]byte("test")), 4, nil
 					},
 				},
@@ -119,8 +120,8 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 			},
 			group: &services.Group{
 				ObjectStore: &mock.ObjectStoreProvider{
-					HasObjectHook: func(ctx context.Context, path string) bool {
-						assert.Equal(t, "1/test.mp4", path)
+					HasObjectHook: func(ctx context.Context, cid int64, filename string) bool {
+						assert.Equal(t, "1/test.mp4", fmt.Sprintf("%d/%s", cid, filename))
 						return false
 					},
 				},
@@ -137,11 +138,11 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 			},
 			group: &services.Group{
 				ObjectStore: &mock.ObjectStoreProvider{
-					HasObjectHook: func(ctx context.Context, path string) bool {
-						assert.Equal(t, "1/test.mp4", path)
+					HasObjectHook: func(ctx context.Context, cid int64, filename string) bool {
+						assert.Equal(t, "1/test.mp4", fmt.Sprintf("%d/%s", cid, filename))
 						return true
 					},
-					GetObjectHook: func(ctx context.Context, path string) (io.ReadSeekCloser, int64, error) {
+					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
 						return nil, 0, assert.AnError
 					},
 				},
@@ -163,11 +164,11 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 					},
 				},
 				ObjectStore: &mock.ObjectStoreProvider{
-					HasObjectHook: func(ctx context.Context, path string) bool {
+					HasObjectHook: func(ctx context.Context, cid int64, filename string) bool {
 						return true
 					},
 
-					GetObjectHook: func(ctx context.Context, path string) (io.ReadSeekCloser, int64, error) {
+					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
 						return NewNopReadSeekCloser([]byte("test")), 4, nil
 					},
 				},
@@ -192,11 +193,11 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 					},
 				},
 				ObjectStore: &mock.ObjectStoreProvider{
-					HasObjectHook: func(ctx context.Context, path string) bool {
+					HasObjectHook: func(ctx context.Context, cid int64, filename string) bool {
 						return true
 					},
 
-					GetObjectHook: func(ctx context.Context, path string) (io.ReadSeekCloser, int64, error) {
+					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
 						return NewNopReadSeekCloser([]byte("test")), 4, nil
 					},
 				},
@@ -216,11 +217,11 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 			},
 			group: &services.Group{
 				ObjectStore: &mock.ObjectStoreProvider{
-					HasObjectHook: func(ctx context.Context, path string) bool {
-						assert.Equal(t, "1/test.mp4", path)
+					HasObjectHook: func(ctx context.Context, cid int64, filename string) bool {
+						assert.Equal(t, "1/test.mp4", fmt.Sprintf("%d/%s", cid, filename))
 						return true
 					},
-					GetObjectHook: func(ctx context.Context, path string) (io.ReadSeekCloser, int64, error) {
+					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
 						return NewNopReadSeekCloser([]byte("test")), 4, nil
 					},
 				},
@@ -240,11 +241,11 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 			},
 			group: &services.Group{
 				ObjectStore: &mock.ObjectStoreProvider{
-					HasObjectHook: func(ctx context.Context, path string) bool {
-						assert.Equal(t, "1/test.mp4", path)
+					HasObjectHook: func(ctx context.Context, cid int64, filename string) bool {
+						assert.Equal(t, "1/test.mp4", fmt.Sprintf("%d/%s", cid, filename))
 						return true
 					},
-					GetObjectHook: func(ctx context.Context, path string) (io.ReadSeekCloser, int64, error) {
+					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
 						return NewNopReadSeekCloser([]byte("test")), 4, nil
 					},
 				},
@@ -261,11 +262,11 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 			},
 			group: &services.Group{
 				ObjectStore: &mock.ObjectStoreProvider{
-					HasObjectHook: func(ctx context.Context, path string) bool {
-						assert.Equal(t, "1/test.mp4", path)
+					HasObjectHook: func(ctx context.Context, cid int64, filename string) bool {
+						assert.Equal(t, "1/test.mp4", fmt.Sprintf("%d/%s", cid, filename))
 						return true
 					},
-					GetObjectHook: func(ctx context.Context, path string) (io.ReadSeekCloser, int64, error) {
+					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
 						return NewErrorReadSeekCloser(nil, assert.AnError), 4, nil
 					},
 				},
@@ -285,11 +286,11 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 			},
 			group: &services.Group{
 				ObjectStore: &mock.ObjectStoreProvider{
-					HasObjectHook: func(ctx context.Context, path string) bool {
-						assert.Equal(t, "1/test.mp4", path)
+					HasObjectHook: func(ctx context.Context, cid int64, filename string) bool {
+						assert.Equal(t, "1/test.mp4", fmt.Sprintf("%d/%s", cid, filename))
 						return true
 					},
-					GetObjectHook: func(ctx context.Context, path string) (io.ReadSeekCloser, int64, error) {
+					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
 						return NewErrorReadSeekCloser(assert.AnError, nil), 4, nil
 					},
 				},

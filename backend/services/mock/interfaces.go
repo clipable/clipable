@@ -64,26 +64,31 @@ func (m *UserProvider) Create(ctx context.Context, user *models.User, columns bo
 }
 
 type ObjectStoreProvider struct {
-	PutObjectHook    func(ctx context.Context, id string, r io.Reader, size int64) (int64, error)
-	GetObjectHook    func(ctx context.Context, id string) (io.ReadSeekCloser, int64, error)
-	DeleteObjectHook func(ctx context.Context, id string) error
-	HasObjectHook    func(ctx context.Context, id string) bool
+	PutObjectHook        func(ctx context.Context, cid int64, filename string, r io.Reader) (int64, error)
+	GetObjectHook        func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error)
+	DeleteObjectHook     func(ctx context.Context, cid int64, filename string) error
+	HasObjectHook        func(ctx context.Context, cid int64, filename string) bool
+	HasActiveUploadsHook func(ctx context.Context, cid int64) bool
 }
 
-func (m *ObjectStoreProvider) PutObject(ctx context.Context, id string, r io.Reader, size int64) (int64, error) {
-	return m.PutObjectHook(ctx, id, r, size)
+func (m *ObjectStoreProvider) PutObject(ctx context.Context, cid int64, filename string, r io.Reader) (int64, error) {
+	return m.PutObjectHook(ctx, cid, filename, r)
 }
 
-func (m *ObjectStoreProvider) GetObject(ctx context.Context, id string) (io.ReadSeekCloser, int64, error) {
-	return m.GetObjectHook(ctx, id)
+func (m *ObjectStoreProvider) GetObject(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
+	return m.GetObjectHook(ctx, cid, filename)
 }
 
-func (m *ObjectStoreProvider) DeleteObject(ctx context.Context, id string) error {
-	return m.DeleteObjectHook(ctx, id)
+func (m *ObjectStoreProvider) DeleteObject(ctx context.Context, cid int64, filename string) error {
+	return m.DeleteObjectHook(ctx, cid, filename)
 }
 
-func (m *ObjectStoreProvider) HasObject(ctx context.Context, id string) bool {
-	return m.HasObjectHook(ctx, id)
+func (m *ObjectStoreProvider) HasObject(ctx context.Context, cid int64, filename string) bool {
+	return m.HasObjectHook(ctx, cid, filename)
+}
+
+func (m *ObjectStoreProvider) HasActiveUploads(ctx context.Context, cid int64) bool {
+	return m.HasActiveUploadsHook(ctx, cid)
 }
 
 type ClipsProvider struct {
@@ -125,13 +130,13 @@ func (m *ClipsProvider) Create(ctx context.Context, clip *models.Clip, creator *
 }
 
 type ClipTxProvider struct {
-	UploadVideoHook func(ctx context.Context, r io.Reader) (int64, error)
+	UploadVideoHook func(ctx context.Context, r io.Reader, size int64) (int64, error)
 	CommitHook      func() error
 	RollbackHook    func() error
 }
 
-func (m *ClipTxProvider) UploadVideo(ctx context.Context, r io.Reader) (int64, error) {
-	return m.UploadVideoHook(ctx, r)
+func (m *ClipTxProvider) UploadVideo(ctx context.Context, r io.Reader, size int64) (int64, error) {
+	return m.UploadVideoHook(ctx, r, size)
 }
 
 func (m *ClipTxProvider) Commit() error {
