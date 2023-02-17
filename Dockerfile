@@ -36,8 +36,8 @@ COPY --from=frontend-builder /home/node/app/package.json ./package.json
 # Automatically leverage output traces to reduce image size 
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 # Some things are not allowed (see https://github.com/vercel/next.js/issues/38119#issuecomment-1172099259)
-COPY --from=frontend-builder --chown=node:node /home/node/app/.next/standalone ./
-COPY --from=frontend-builder --chown=node:node /home/node/app/.next/static ./.next/static
+COPY --from=frontend-builder /home/node/app/.next/standalone ./
+COPY --from=frontend-builder /home/node/app/.next/static ./.next/static
 
 COPY backend/migrations /migrations
 COPY --from=backend-build /app/clipable /
