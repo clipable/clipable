@@ -100,13 +100,11 @@ func (r *Routes) GetCurrentUser(user *models.User, req *http.Request) (int, []by
 // # Success returns json array of Clip objects created by requesting User
 //
 // GET /users/me/clips
-func (r *Routes) GetCurrentUsersClips(user *models.User, req *http.Request) (int, []byte, error) {
-	if user == nil {
-		return http.StatusUnauthorized, nil, nil
-	}
+func (r *Routes) GetUsersClips(user *models.User, req *http.Request) (int, []byte, error) {
+	vars := vars(req)
 
 	clips, err := r.Clips.FindMany(req.Context(), modelsx.NewBuilder().
-		Add(models.ClipWhere.CreatorID.EQ(user.ID)).
+		Add(models.ClipWhere.CreatorID.EQ(vars.UID)).
 		Add(getPaginationMods(req, models.ClipColumns.CreatedAt, models.TableNames.Clips, models.ClipColumns.ID)...,
 		)...,
 	)

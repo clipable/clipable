@@ -84,8 +84,8 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 	// USER ENDPOINTS
 	endpoint("/users/search", r.Auth(r.SearchUsers), http.MethodGet)
 	endpoint("/users/me", r.Auth(r.GetCurrentUser), http.MethodGet)
-	endpoint("/users/me/clips", r.Auth(r.GetCurrentUsersClips), http.MethodGet)
 	endpoint("/users", r.Auth(r.GetUsers), http.MethodGet)
+	endpoint("/users/{uid:[a-zA-Z0-9-]{4,}}/clips", r.Auth(r.GetUsersClips), http.MethodGet)
 	endpoint("/users/{uid:[a-zA-Z0-9-]{4,}}", r.Auth(r.GetUser), http.MethodGet)
 	endpoint("/users/{uid:[a-zA-Z0-9-]{4,}}", r.Auth(r.UpdateUser), http.MethodPatch)
 
