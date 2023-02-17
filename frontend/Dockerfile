@@ -3,13 +3,15 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /home/node/app
 COPY pnpm-lock.yaml .npmr[c] ./
 
-RUN pnpm fetch
+RUN ls -lash && exit 1
+
+RUN pnpm fetch && exit 1
 
 FROM mitchpash/pnpm AS builder
 WORKDIR /home/node/app
 COPY --from=deps /home/node/app/node_modules ./node_modules
 COPY . .
-
+RUN ls -lash ./node_modules && exit 1
 RUN pnpm install -r --offline
 
 RUN pnpm build
