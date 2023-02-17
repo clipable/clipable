@@ -35,15 +35,8 @@ services:
       exit 0;
       "
 
-  frontend:
-    image: ghcr.io/clipable/frontend:latest
-    ports:
-      - 80:3000
-    depends_on:
-      - backend
-
-  backend:
-    image: ghcr.io/clipable/backend:latest
+  clippable:
+    build: .
     environment:
       - DEBUG=true
       - LISTENADDR=:8080
@@ -62,6 +55,8 @@ services:
       - S3_ACCESS=minio
       - S3_SECRET=myminiokeythatishouldchange123
       - S3_ADDRESS=minio:9000
+    ports:
+      - 80:3000
     depends_on:
       postgres:
         condition: service_healthy
