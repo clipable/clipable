@@ -362,6 +362,94 @@ func TestRoutes_GetCurrentUser(t *testing.T) {
 	}
 }
 
+func TestRoutes_GetUsersClips(t *testing.T) {
+	tests := []struct {
+		name     string
+		group    *services.Group
+		user     *models.User
+		vars     *RouteVars
+		expected int
+		hasBody  bool
+		hasError bool
+	}{
+		{
+			name:     "Success",
+			expected: http.StatusOK,
+			hasBody:  true,
+			hasError: false,
+			group: &services.Group{
+				Clips: &mock.ClipsProvider{
+					FindManyHook: func(ctx context.Context, mods ...qm.QueryMod) (models.ClipSlice, error) {
+						return models.ClipSlice{&models.Clip{}}, nil
+					},
+				},
+			},
+			vars: &RouteVars{
+				UID: 1,
+			},
+			user: &models.User{
+				ID: 1,
+			},
+		},
+		{
+			name:     "Internal Server Error",
+			expected: http.StatusInternalServerError,
+			hasBody:  false,
+			hasError: true,
+			group: &services.Group{
+				Clips: &mock.ClipsProvider{
+					FindManyHook: func(ctx context.Context, mods ...qm.QueryMod) (models.ClipSlice, error) {
+						return nil, sql.ErrNoRows
+					},
+				},
+			},
+			vars: &RouteVars{
+				UID: 1,
+			},
+		},
+		{
+			name:     "No Content",
+			expected: http.StatusNoContent,
+			hasBody:  false,
+			hasError: false,
+			group: &services.Group{
+				Clips: &mock.ClipsProvider{
+					FindManyHook: func(ctx context.Context, mods ...qm.QueryMod) (models.ClipSlice, error) {
+						return models.ClipSlice{}, nil
+					},
+				},
+			},
+			vars: &RouteVars{
+				UID: 1,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &Routes{
+				Group: tt.group,
+			}
+
+			req := httptest.NewRequest("GET", "/", &bytes.Buffer{})
+
+			req = req.WithContext(context.WithValue(req.Context(), VarKey, tt.vars))
+
+			code, body, err := r.GetUsersClips(tt.user, req)
+			if code != tt.expected {
+				t.Errorf("Received unexpected error code during %s test. Wanted: %d Got: %d", tt.name, tt.expected, code)
+			}
+
+			if (body != nil) != tt.hasBody {
+				t.Errorf("Received unexpected body during %s test.", tt.name)
+			}
+
+			if (err != nil) != tt.hasError {
+				t.Errorf("Received unexpected error during %s test.", tt.name)
+			}
+		})
+	}
+}
+
 func TestRoutes_GetUsers(t *testing.T) {
 	tests := []struct {
 		name     string
