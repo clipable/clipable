@@ -46,6 +46,7 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 	router := mux.NewRouter()
 	internalRouter := mux.NewRouter()
 
+	router.Use(DynamicTimeoutMiddleware)
 	router.Use(LoggingMiddleware)
 	internalRouter.Use(LoggingMiddleware)
 	router.Use(r.ParseVars)
@@ -107,7 +108,7 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 		}
 
 		r.Router = cors.New(cors.Options{
-			AllowedOrigins: []string{cfg.CORS.Origin, "https://reference.dashif.org"},
+			AllowedOrigins: []string{cfg.CORS.Origin, "https://reference.dashif.org", "https://shaka-player-demo.appspot.com"},
 			AllowedMethods: []string{
 				http.MethodGet,
 				http.MethodPost,

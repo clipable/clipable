@@ -11,26 +11,18 @@ import (
 	"webserver/modelsx"
 
 	"github.com/araddon/dateparse"
+	"github.com/dustin/go-humanize"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+
+	. "github.com/docker/go-units"
 )
 
 // Auth injects the user of a request to the handler
 func (r *Routes) Auth(handler func(u *models.User, r *http.Request) (int, []byte, error)) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
-		// TODO: This doeesn't work for some reason, so I'm just going to use the default timeout for now until we can figure out why it returns "feature not supported"
-		//ctr := http.NewResponseController(resp)
-
-		// fmt.Println(time.Now().Add(time.Duration(req.ContentLength/(500*KiB)) * time.Second).Add(1 * time.Second))
-		// // Set a write timeout based on how long if would take to upload the body on a 500/kbps connection + 1 second for empty bodies
-		// if err := ctr.SetReadDeadline(time.Now().Add(time.Duration(req.ContentLength/(500*KiB)) * time.Second).Add(1 * time.Second)); err != nil {
-		// 	log.WithError(err).Errorln("Failed to set read deadline")
-		// }
-		// if err := ctr.SetWriteDeadline(time.Now().Add(time.Duration(req.ContentLength/(500*KiB)) * time.Second).Add(1 * time.Second)); err != nil {
-		// 	log.WithError(err).Errorln("Failed to set write deadline")
-		// }
 		s, _ := r.store.Get(req, SESSION_NAME)
 
 		var user *models.User
@@ -56,6 +48,7 @@ func (r *Routes) Auth(handler func(u *models.User, r *http.Request) (int, []byte
 
 		if body != nil && err == nil {
 			resp.Header().Set("Content-Type", "application/json")
+			resp.Header().Set("Content-Length", strconv.Itoa(len(body)))
 		}
 
 		if e, ok := err.(net.Error); ok && e.Timeout() {
@@ -259,10 +252,11 @@ func realIP(req *http.Request) string {
 type loggingResponseWriter struct {
 	http.ResponseWriter
 	statusCode int
+	written    uint64
 }
 
 func newLoggingResponseWriter(w http.ResponseWriter) *loggingResponseWriter {
-	return &loggingResponseWriter{w, http.StatusOK}
+	return &loggingResponseWriter{w, http.StatusOK, 0}
 }
 
 func (lw *loggingResponseWriter) WriteHeader(code int) {
@@ -271,7 +265,15 @@ func (lw *loggingResponseWriter) WriteHeader(code int) {
 }
 
 func (lw *loggingResponseWriter) Write(b []byte) (int, error) {
-	return lw.ResponseWriter.Write(b)
+	len, err := lw.ResponseWriter.Write(b)
+
+	lw.written += uint64(len)
+
+	return len, err
+}
+
+func (lw *loggingResponseWriter) Unwrap() http.ResponseWriter {
+	return lw.ResponseWriter
 }
 
 // Middleware implement mux middleware interface
@@ -295,9 +297,51 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		latency := time.Since(start)
 
 		entry.WithFields(log.Fields{
-			"status": lw.statusCode,
-			"method": r.Method,
-			"took":   latency,
+			"status":  lw.statusCode,
+			"method":  r.Method,
+			"written": humanize.Bytes(lw.written),
+			"read":    humanize.Bytes(uint64(r.ContentLength)),
+			"took":    latency,
 		}).Info(r.URL.Path)
 	})
+}
+
+type timeoutResponseWriter struct {
+	http.ResponseWriter
+	rc *http.ResponseController
+}
+
+func (tw *timeoutResponseWriter) WriteHeader(code int) {
+
+	length, err := strconv.Atoi(tw.Header().Get("Content-Length"))
+
+	if err == nil {
+		if err := tw.rc.SetWriteDeadline(time.Now().Add(timeoutFromLength(int64(length)))); err != nil {
+			log.WithError(err).Errorln("Failed to set write deadline")
+		}
+	}
+
+	tw.ResponseWriter.WriteHeader(code)
+}
+
+func (tw *timeoutResponseWriter) Unwrap() http.ResponseWriter {
+	return tw.ResponseWriter
+}
+
+func DynamicTimeoutMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctr := http.NewResponseController(w)
+
+		if err := ctr.SetReadDeadline(time.Now().Add(timeoutFromLength(r.ContentLength))); err != nil {
+			log.WithError(err).Errorln("Failed to set read deadline")
+		}
+
+		next.ServeHTTP(&timeoutResponseWriter{w, ctr}, r)
+	})
+}
+
+func timeoutFromLength(length int64) time.Duration {
+	transferSpeed := 500 * KiB         // Set timeout based on 500kbps connection
+	minimumDuration := 5 * time.Second // A minimum timeout duration in case there was no body
+	return time.Duration(length/int64(transferSpeed))*time.Second + minimumDuration
 }
