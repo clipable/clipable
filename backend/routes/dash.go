@@ -14,7 +14,7 @@ func (r *Routes) GetStreamFile(w http.ResponseWriter, req *http.Request) {
 	vars := vars(req)
 
 	if !r.ObjectStore.HasObject(req.Context(), vars.CID, vars.Filename) {
-		http.Error(w, "Not Found", http.StatusNotFound)
+		r.handleErr(w, http.StatusNotFound, nil, "Not Found")
 		return
 	}
 
@@ -22,7 +22,7 @@ func (r *Routes) GetStreamFile(w http.ResponseWriter, req *http.Request) {
 	objReader, size, err := r.ObjectStore.GetObject(req.Context(), vars.CID, vars.Filename)
 
 	if err != nil {
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		r.handleErr(w, http.StatusInternalServerError, err, "Internal server error")
 		return
 	}
 
@@ -33,14 +33,14 @@ func (r *Routes) GetStreamFile(w http.ResponseWriter, req *http.Request) {
 		clip, err := r.Clips.Find(req.Context(), vars.CID)
 
 		if err != nil {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			r.handleErr(w, http.StatusInternalServerError, err, "Internal server error")
 			return
 		}
 
 		clip.Views++
 
 		if err := r.Clips.Update(req.Context(), clip, boil.Whitelist(models.ClipColumns.Views)); err != nil {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			r.handleErr(w, http.StatusInternalServerError, err, "Internal server error")
 			return
 		}
 	}
@@ -48,12 +48,13 @@ func (r *Routes) GetStreamFile(w http.ResponseWriter, req *http.Request) {
 	ranges, err := http_range.ParseRange(req.Header.Get("Range"), size)
 
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		r.handleErr(w, http.StatusBadRequest, err, "Bad Request")
 		return
 	}
 
 	if len(ranges) > 1 {
 		http.Error(w, "Requested Range Not Satisfiable", http.StatusRequestedRangeNotSatisfiable)
+		r.handleErr(w, http.StatusRequestedRangeNotSatisfiable, nil, "Requested Range Not Satisfiable")
 		return
 	}
 
@@ -64,7 +65,7 @@ func (r *Routes) GetStreamFile(w http.ResponseWriter, req *http.Request) {
 		// Copy the object to the response writer
 		_, err = io.Copy(w, objReader)
 		if err != nil {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			r.handleErr(w, http.StatusInternalServerError, err, "Internal server error")
 			return
 		}
 
@@ -79,7 +80,7 @@ func (r *Routes) GetStreamFile(w http.ResponseWriter, req *http.Request) {
 		_, err = objReader.Seek(ranges[0].Start, io.SeekStart)
 
 		if err != nil {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			r.handleErr(w, http.StatusInternalServerError, err, "Internal server error")
 			return
 		}
 

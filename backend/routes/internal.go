@@ -33,8 +33,7 @@ func (r *Routes) SetProgress(w http.ResponseWriter, req *http.Request) {
 	cid, err := strconv.ParseInt(vars["cid"], 10, 64)
 
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
-		log.WithError(err).Error("Failed to parse cid")
+		r.handleErr(w, http.StatusBadRequest, err, "Failed to parse cid")
 		return
 	}
 
@@ -48,7 +47,7 @@ func (r *Routes) SetProgress(w http.ResponseWriter, req *http.Request) {
 		parts := strings.Split(line, "=")
 
 		if len(parts) != 2 {
-			http.Error(w, "Bad Request", http.StatusBadRequest)
+			r.handleErr(w, http.StatusBadRequest, nil, "Bad Request")
 			log.WithField("line", line).Error("Failed to parse line")
 			return
 		}
@@ -60,8 +59,7 @@ func (r *Routes) SetProgress(w http.ResponseWriter, req *http.Request) {
 			frame, err := strconv.Atoi(data["frame"])
 
 			if err != nil {
-				http.Error(w, "Bad Request", http.StatusBadRequest)
-				log.WithError(err).Error("Failed to parse frame")
+				r.handleErr(w, http.StatusBadRequest, err, "Failed to parse frame")
 				return
 			}
 
@@ -75,8 +73,7 @@ func (r *Routes) UploadObject(w http.ResponseWriter, req *http.Request) {
 	cid, err := strconv.ParseInt(vars["cid"], 10, 64)
 
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
-		log.WithError(err).Error("Failed to parse cid")
+		r.handleErr(w, http.StatusBadRequest, err, "Failed to parse cid")
 		return
 	}
 
@@ -89,13 +86,12 @@ func (r *Routes) ReadObject(w http.ResponseWriter, req *http.Request) {
 	cid, err := strconv.ParseInt(vars["cid"], 10, 64)
 
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
-		log.WithError(err).Error("Failed to parse cid")
+		r.handleErr(w, http.StatusBadRequest, err, "Failed to parse cid")
 		return
 	}
 
 	if !r.ObjectStore.HasObject(context.Background(), cid, vars["file"]) {
-		http.Error(w, "Not Found", http.StatusNotFound)
+		r.handleErr(w, http.StatusNotFound, nil, "Not Found")
 		return
 	}
 
@@ -103,8 +99,7 @@ func (r *Routes) ReadObject(w http.ResponseWriter, req *http.Request) {
 	objReader, size, err := r.ObjectStore.GetObject(context.Background(), cid, vars["file"])
 
 	if err != nil {
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		log.WithError(err).Error("Failed to get object")
+		r.handleErr(w, http.StatusInternalServerError, err, "Failed to get object")
 		return
 	}
 
@@ -113,18 +108,18 @@ func (r *Routes) ReadObject(w http.ResponseWriter, req *http.Request) {
 	ranges, err := http_range.ParseRange(req.Header.Get("Range"), size)
 
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		r.handleErr(w, http.StatusBadRequest, err, "Bad Request")
 		return
 	}
 
 	if len(ranges) > 1 {
-		http.Error(w, "Requested Range Not Satisfiable", http.StatusRequestedRangeNotSatisfiable)
+		r.handleErr(w, http.StatusRequestedRangeNotSatisfiable, nil, "Requested Range Not Satisfiable")
 		return
 	}
 
 	if len(ranges) == 1 {
 		if ranges[0].Start > size || ranges[0].Start+ranges[0].Length > size {
-			http.Error(w, "Requested Range Not Satisfiable", http.StatusRequestedRangeNotSatisfiable)
+			r.handleErr(w, http.StatusRequestedRangeNotSatisfiable, nil, "Requested Range Not Satisfiable")
 			return
 		}
 
@@ -140,8 +135,7 @@ func (r *Routes) ReadObject(w http.ResponseWriter, req *http.Request) {
 		_, err = objReader.Seek(ranges[0].Start, io.SeekStart)
 
 		if err != nil {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			log.WithError(err).Error("Failed to seek to start of range")
+			r.handleErr(w, http.StatusInternalServerError, err, "Failed to seek to start of range")
 			return
 		}
 
@@ -151,8 +145,7 @@ func (r *Routes) ReadObject(w http.ResponseWriter, req *http.Request) {
 		// Copy the object to the response writer
 		_, err := io.Copy(w, objReader)
 		if err != nil {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			log.WithError(err).Error("Failed to copy object to response writer")
+			r.handleErr(w, http.StatusInternalServerError, err, "Failed to copy object to response writer")
 			return
 		}
 	}
