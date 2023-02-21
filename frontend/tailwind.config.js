@@ -4,7 +4,11 @@ module.exports = {
     "./src/**/*.{js,ts,jsx,tsx}"
   ],
   theme: {
-    extend: {},
+    extend: {
+    },
+    fontFamily: {
+      library: ['LIBRARY 3 AM']
+    }
   },
   daisyui: {
     themes: ["business"],
