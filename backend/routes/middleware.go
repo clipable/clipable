@@ -98,6 +98,11 @@ func (r *Routes) FullHandler(handler func(u *models.User, w http.ResponseWriter,
 		resp.WriteHeader(code)
 
 		if code == http.StatusInternalServerError {
+			// If for some reason body isn't nil and we're returning an internal server error, close it
+			if body != nil {
+				body.Close()
+			}
+
 			body = io.NopCloser(bytes.NewReader([]byte("Default Error Page")))
 		}
 
