@@ -1,7 +1,9 @@
 package routes
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"net"
 	"net/http"
 	"strconv"
@@ -20,8 +22,41 @@ import (
 	. "github.com/docker/go-units"
 )
 
-// Auth injects the user of a request to the handler
-func (r *Routes) Auth(handler func(u *models.User, r *http.Request) (int, []byte, error)) http.HandlerFunc {
+type LimitedReadCloser struct {
+	io.Reader
+	io.Closer
+}
+
+func NewLimitedReadCloser(rc io.ReadCloser, limit int64) io.ReadCloser {
+	return &LimitedReadCloser{Reader: io.LimitReader(rc, limit), Closer: rc}
+}
+
+func StringToStream(s string) io.ReadCloser {
+	return io.NopCloser(strings.NewReader(s))
+}
+
+func (r *Routes) Handler(handler func(u *models.User, r *http.Request) (int, []byte, error)) http.HandlerFunc {
+	return r.FullHandler(func(u *models.User, w http.ResponseWriter, r *http.Request) (int, io.ReadCloser, http.Header, error) {
+		code, body, err := handler(u, r)
+		return code, io.NopCloser(bytes.NewReader(body)), nil, err
+	})
+}
+
+func (r *Routes) ResponseHandler(handler func(w http.ResponseWriter, r *http.Request) (int, []byte, error)) http.HandlerFunc {
+	return r.FullHandler(func(u *models.User, w http.ResponseWriter, r *http.Request) (int, io.ReadCloser, http.Header, error) {
+		code, _, err := handler(w, r)
+		return code, nil, nil, err
+	})
+}
+
+func (r *Routes) StreamHandler(handler func(u *models.User, r *http.Request) (int, io.ReadCloser, http.Header, error)) http.HandlerFunc {
+	return r.FullHandler(func(u *models.User, w http.ResponseWriter, r *http.Request) (int, io.ReadCloser, http.Header, error) {
+		code, body, headers, err := handler(u, r)
+		return code, body, headers, err
+	})
+}
+
+func (r *Routes) FullHandler(handler func(u *models.User, w http.ResponseWriter, r *http.Request) (int, io.ReadCloser, http.Header, error)) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
 		s, _ := r.store.Get(req, SESSION_NAME)
 
@@ -40,17 +75,22 @@ func (r *Routes) Auth(handler func(u *models.User, r *http.Request) (int, []byte
 			}
 		}
 
-		code, body, err := handler(user, req)
+		code, body, headers, err := handler(user, resp, req)
 
+		// If the user did not send a CSRF token, send one back
+		// TODO: Validate that this is the most idiomatic way of handling CSRF tokens
 		if req.Header.Get("X-CSRF-Token") == "" {
 			resp.Header().Set("X-CSRF-Token", csrf.Token(req))
 		}
 
-		if body != nil && err == nil {
-			resp.Header().Set("Content-Type", "application/json")
-			resp.Header().Set("Content-Length", strconv.Itoa(len(body)))
+		// If the handler returned headers, add them to the response
+		for k, v := range headers {
+			for _, v := range v {
+				resp.Header().Add(k, v)
+			}
 		}
 
+		// If the error returned is a net.Error, check if it's a timeout
 		if e, ok := err.(net.Error); ok && e.Timeout() {
 			code = http.StatusRequestTimeout
 		}
@@ -58,16 +98,7 @@ func (r *Routes) Auth(handler func(u *models.User, r *http.Request) (int, []byte
 		resp.WriteHeader(code)
 
 		if code == http.StatusInternalServerError {
-			body = []byte("Default Error Page")
-		}
-
-		if body != nil && err == nil {
-			if _, err := resp.Write(body); err != nil {
-				log.WithError(err).
-					WithField("Path", req.URL.Path).
-					Errorln("Failed to write body")
-				return
-			}
+			body = io.NopCloser(bytes.NewReader([]byte("Default Error Page")))
 		}
 
 		if err != nil {
@@ -75,6 +106,16 @@ func (r *Routes) Auth(handler func(u *models.User, r *http.Request) (int, []byte
 				WithField("Path", req.URL.Path).
 				WithField("Code", code).
 				Warnln("Exception in route")
+		}
+
+		if body != nil {
+			defer body.Close()
+			if _, err := io.Copy(resp, body); err != nil {
+				log.WithError(err).
+					WithField("Path", req.URL.Path).
+					Errorln("Failed to write body")
+				return
+			}
 		}
 	}
 }

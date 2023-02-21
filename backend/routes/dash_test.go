@@ -57,6 +57,7 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 		headers         map[string]string
 		expected        int
 		expectedHeaders map[string]string
+		hasError        bool
 		hasBody         bool
 		bodyLength      int
 	}{
@@ -112,7 +113,6 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 		{
 			name:       "Handle object doesn't exist",
 			expected:   http.StatusNotFound,
-			hasBody:    true,
 			bodyLength: -1,
 			vars: &RouteVars{
 				CID:      1,
@@ -130,7 +130,7 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 		{
 			name:       "Handle error getting object",
 			expected:   http.StatusInternalServerError,
-			hasBody:    true,
+			hasError:   true,
 			bodyLength: -1,
 			vars: &RouteVars{
 				CID:      1,
@@ -151,7 +151,7 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 		{
 			name:       "Handle failure to find clip",
 			expected:   http.StatusInternalServerError,
-			hasBody:    true,
+			hasError:   true,
 			bodyLength: -1,
 			vars: &RouteVars{
 				CID:      1,
@@ -177,7 +177,7 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 		{
 			name:       "Handle failure to update clip view count",
 			expected:   http.StatusInternalServerError,
-			hasBody:    true,
+			hasError:   true,
 			bodyLength: -1,
 			vars: &RouteVars{
 				CID:      1,
@@ -252,30 +252,9 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 			},
 		},
 		{
-			name:       "Handle failure to copy object",
-			expected:   http.StatusInternalServerError,
-			hasBody:    true,
-			bodyLength: -1,
-			vars: &RouteVars{
-				CID:      1,
-				Filename: "test.mp4",
-			},
-			group: &services.Group{
-				ObjectStore: &mock.ObjectStoreProvider{
-					HasObjectHook: func(ctx context.Context, cid int64, filename string) bool {
-						assert.Equal(t, "1/test.mp4", fmt.Sprintf("%d/%s", cid, filename))
-						return true
-					},
-					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
-						return NewErrorReadSeekCloser(nil, assert.AnError), 4, nil
-					},
-				},
-			},
-		},
-		{
 			name:       "Handle failure to seek range",
 			expected:   http.StatusInternalServerError,
-			hasBody:    true,
+			hasError:   true,
 			bodyLength: -1,
 			vars: &RouteVars{
 				CID:      1,
@@ -310,17 +289,17 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 				req.Header.Set(k, v)
 			}
 
-			resp := httptest.NewRecorder()
+			status, body, headers, err := r.GetStreamFile(nil, req)
 
-			r.GetStreamFile(resp, req)
-
-			assert.Equal(t, tt.expected, resp.Code)
-			assert.Equal(t, tt.hasBody, resp.Body.Len() != 0)
+			assert.Equal(t, tt.expected, status)
+			assert.Equal(t, tt.hasBody, body != nil)
+			assert.Equal(t, tt.hasError, err != nil)
 			if tt.bodyLength != -1 {
-				assert.Equal(t, tt.bodyLength, resp.Body.Len())
+				bodyBytes, _ := io.ReadAll(body)
+				assert.Equal(t, tt.bodyLength, len(bodyBytes))
 			}
 			for k, v := range tt.expectedHeaders {
-				assert.Equal(t, v, resp.Header().Get(k))
+				assert.Equal(t, v, headers.Get(k))
 			}
 		})
 	}
