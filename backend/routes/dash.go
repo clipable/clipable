@@ -25,6 +25,16 @@ func (r *Routes) GetStreamFile(u *models.User, req *http.Request) (int, io.ReadC
 		return http.StatusInternalServerError, nil, nil, errors.Wrap(err, "failed to get object")
 	}
 
+	deferClose := false
+
+	// The underlying handler will close the reader if we return it
+	// but if we return early due to an error we need to close it ourselves
+	defer func() {
+		if !deferClose {
+			objReader.Close()
+		}
+	}()
+
 	if vars.Filename == "dash.mpd" {
 		// Get the clip to increment views by cid
 		clip, err := r.Clips.Find(req.Context(), vars.CID)
@@ -56,6 +66,7 @@ func (r *Routes) GetStreamFile(u *models.User, req *http.Request) (int, io.ReadC
 		// Set the content length
 		headers.Set("Content-Length", fmt.Sprint(size))
 
+		deferClose = true
 		return http.StatusOK, objReader, headers, nil
 	} else {
 		// Accept ranges
@@ -70,6 +81,7 @@ func (r *Routes) GetStreamFile(u *models.User, req *http.Request) (int, io.ReadC
 			return http.StatusInternalServerError, nil, nil, errors.Wrap(err, "failed to seek to start of range")
 		}
 
+		deferClose = true
 		return http.StatusPartialContent, NewLimitedReadCloser(objReader, ranges[0].Length), headers, nil
 	}
 }
