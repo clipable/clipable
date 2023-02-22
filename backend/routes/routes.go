@@ -78,29 +78,29 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 	internalEndpoint("/progress/{cid}", r.SetProgress, http.MethodPost)
 
 	// AUTH ENDPOINTS
-	endpoint("/auth/login", r.Login, http.MethodPost)
-	endpoint("/auth/register", r.Register, http.MethodPost)
-	endpoint("/auth/logout", r.Logout, http.MethodPost)
+	endpoint("/auth/login", r.ResponseHandler(r.Login), http.MethodPost)
+	endpoint("/auth/register", r.ResponseHandler(r.Register), http.MethodPost)
+	endpoint("/auth/logout", r.ResponseHandler(r.Logout), http.MethodPost)
 
 	// USER ENDPOINTS
-	endpoint("/users/search", r.Auth(r.SearchUsers), http.MethodGet)
-	endpoint("/users/me", r.Auth(r.GetCurrentUser), http.MethodGet)
-	endpoint("/users", r.Auth(r.GetUsers), http.MethodGet)
-	endpoint("/users/{uid:[a-zA-Z0-9-]{4,}}/clips", r.Auth(r.GetUsersClips), http.MethodGet)
-	endpoint("/users/{uid:[a-zA-Z0-9-]{4,}}", r.Auth(r.GetUser), http.MethodGet)
-	endpoint("/users/{uid:[a-zA-Z0-9-]{4,}}", r.Auth(r.UpdateUser), http.MethodPatch)
+	endpoint("/users/search", r.Handler(r.SearchUsers), http.MethodGet)
+	endpoint("/users/me", r.Handler(r.GetCurrentUser), http.MethodGet)
+	endpoint("/users", r.Handler(r.GetUsers), http.MethodGet)
+	endpoint("/users/{uid:[a-zA-Z0-9-]{4,}}/clips", r.Handler(r.GetUsersClips), http.MethodGet)
+	endpoint("/users/{uid:[a-zA-Z0-9-]{4,}}", r.Handler(r.GetUser), http.MethodGet)
+	endpoint("/users/{uid:[a-zA-Z0-9-]{4,}}", r.Handler(r.UpdateUser), http.MethodPatch)
 
 	// CLIP ENDPOINTS
-	endpoint("/clips", r.Auth(r.UploadClip), http.MethodPost)
-	endpoint("/clips", r.Auth(r.GetClips), http.MethodGet)
-	endpoint("/clips/search", r.Auth(r.SearchClips), http.MethodGet)
-	endpoint("/clips/progress", r.Auth(r.GetProgress), http.MethodGet)
-	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}", r.Auth(r.GetClip), http.MethodGet)
-	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}", r.Auth(r.UpdateClip), http.MethodPatch)
-	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}", r.Auth(r.DeleteClip), http.MethodDelete)
+	endpoint("/clips", r.Handler(r.UploadClip), http.MethodPost)
+	endpoint("/clips", r.Handler(r.GetClips), http.MethodGet)
+	endpoint("/clips/search", r.Handler(r.SearchClips), http.MethodGet)
+	endpoint("/clips/progress", r.Handler(r.GetProgress), http.MethodGet)
+	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}", r.Handler(r.GetClip), http.MethodGet)
+	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}", r.Handler(r.UpdateClip), http.MethodPatch)
+	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}", r.Handler(r.DeleteClip), http.MethodDelete)
 
 	// MPEG-DASH ENDPOINTS
-	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}/{filename}", r.GetStreamFile, http.MethodGet)
+	endpoint("/clips/{cid:[a-zA-Z0-9-]{4,}}/{filename}", r.StreamHandler(r.GetStreamFile), http.MethodGet)
 
 	if cfg.CORS.Enabled {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{

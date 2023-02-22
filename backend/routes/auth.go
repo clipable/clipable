@@ -6,7 +6,7 @@ import (
 	"webserver/modelsx"
 
 	"github.com/alexedwards/argon2id"
-	log "github.com/sirupsen/logrus"
+	"github.com/friendsofgo/errors"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
@@ -15,87 +15,71 @@ const SESSION_KEY_UID = "uid"
 const SESSION_KEY_OAUTH_STATE = "oauth-state"
 const SESSION_KEY_ID = "id"
 
-func (r *Routes) Login(resp http.ResponseWriter, req *http.Request) {
+func (r *Routes) Login(resp http.ResponseWriter, req *http.Request) (int, []byte, error) {
 	session, _ := r.store.Get(req, SESSION_NAME)
 
 	json, err := modelsx.ParseUser(req, modelsx.UserValidateRegister)
 
 	if err != nil {
-		resp.WriteHeader(http.StatusBadRequest)
-		resp.Write([]byte(err.Error()))
-		return
+		return http.StatusBadRequest, []byte(err.Error()), nil
 	}
 
 	user, err := r.Users.FindUsername(req.Context(), json.Username.String)
 
 	if err == sql.ErrNoRows {
-		resp.WriteHeader(http.StatusUnauthorized)
-		resp.Write([]byte("Invalid username or password"))
-		return
+		return http.StatusUnauthorized, []byte("Invalid username/password combination"), nil
 	} else if err != nil {
-		resp.WriteHeader(http.StatusInternalServerError)
-		log.WithError(err).Error("Failed to find user")
-		return
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "Failed to find user")
 	}
 
 	match, err := argon2id.ComparePasswordAndHash(json.Password.String, user.Password)
 
 	if err != nil {
-		resp.WriteHeader(http.StatusInternalServerError)
-		log.WithError(err).Error("Failed to compare password")
-		return
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "Failed to compare password")
 	}
 
 	if !match {
-		resp.WriteHeader(http.StatusUnauthorized)
-		resp.Write([]byte("Invalid username or password"))
-		return
+		return http.StatusUnauthorized, []byte("Invalid username/password combination"), nil
 	}
 
 	session.Values[SESSION_KEY_ID] = user.ID
 	session.Save(req, resp)
 
-	resp.WriteHeader(http.StatusOK)
+	return modelsx.UserFromModel(user).Marshal()
 }
 
-func (r *Routes) Logout(resp http.ResponseWriter, req *http.Request) {
+func (r *Routes) Logout(resp http.ResponseWriter, req *http.Request) (int, []byte, error) {
 	session, _ := r.store.Get(req, SESSION_NAME)
 
 	session.Options.MaxAge = -1
 	session.Save(req, resp)
 	resp.Header().Set("Clear-Site-Data", `"cookies", "storage"`)
+
+	return http.StatusOK, nil, nil
 }
 
-func (r *Routes) Register(resp http.ResponseWriter, req *http.Request) {
+func (r *Routes) Register(resp http.ResponseWriter, req *http.Request) (int, []byte, error) {
 
 	usr, err := modelsx.ParseUser(req, modelsx.UserValidateRegister)
 
 	if err != nil {
-		resp.WriteHeader(http.StatusBadRequest)
-		resp.Write([]byte(err.Error()))
-		return
+		return http.StatusBadRequest, []byte(err.Error()), nil
 	}
 
 	exists, err := r.Users.ExistsUsername(req.Context(), usr.Username.String)
 
 	if err != nil {
-		resp.WriteHeader(http.StatusInternalServerError)
-		log.WithError(err).Error("Failed to check if user exists")
-		return
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "Failed to check if username exists")
 	}
 
 	if exists {
-		resp.WriteHeader(http.StatusConflict)
-		resp.Write([]byte("Username already exists"))
-		return
+		return http.StatusConflict, []byte("Username already exists"), nil
 	}
 
 	hash, err := argon2id.CreateHash(usr.Password.String, argon2id.DefaultParams)
 
 	if err != nil {
-		resp.WriteHeader(http.StatusInternalServerError)
-		log.WithError(err).Error("Failed to hash password")
-		return
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "Failed to hash password")
 	}
 
 	usr.Password.String = hash
@@ -103,9 +87,7 @@ func (r *Routes) Register(resp http.ResponseWriter, req *http.Request) {
 	model := usr.ToModel()
 
 	if err := r.Users.Create(req.Context(), model, boil.Whitelist(usr.GetUpdateWhitelist()...)); err != nil {
-		resp.WriteHeader(http.StatusInternalServerError)
-		log.WithError(err).Error("Failed to create user")
-		return
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "Failed to create user")
 	}
 
 	session, _ := r.store.Get(req, SESSION_NAME)
@@ -113,14 +95,5 @@ func (r *Routes) Register(resp http.ResponseWriter, req *http.Request) {
 	session.Values[SESSION_KEY_ID] = model.ID
 	session.Save(req, resp)
 
-	res, body, err := modelsx.UserFromModel(model).Marshal()
-
-	if err != nil {
-		resp.WriteHeader(http.StatusInternalServerError)
-		log.WithError(err).Error("Failed to marshal user")
-		return
-	}
-
-	resp.WriteHeader(res)
-	resp.Write(body)
+	return modelsx.UserFromModel(model).Marshal()
 }

@@ -6,87 +6,82 @@ import (
 	"net/http"
 	"webserver/models"
 
+	"github.com/friendsofgo/errors"
 	"github.com/gotd/contrib/http_range"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
-func (r *Routes) GetStreamFile(w http.ResponseWriter, req *http.Request) {
+func (r *Routes) GetStreamFile(u *models.User, req *http.Request) (int, io.ReadCloser, http.Header, error) {
 	vars := vars(req)
 
 	if !r.ObjectStore.HasObject(req.Context(), vars.CID, vars.Filename) {
-		http.Error(w, "Not Found", http.StatusNotFound)
-		return
+		return http.StatusNotFound, nil, nil, nil
 	}
 
 	// Get the object from the minio server
 	objReader, size, err := r.ObjectStore.GetObject(req.Context(), vars.CID, vars.Filename)
 
 	if err != nil {
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
+		return http.StatusInternalServerError, nil, nil, errors.Wrap(err, "failed to get object")
 	}
 
-	defer objReader.Close()
+	deferClose := false
+
+	// The underlying handler will close the reader if we return it
+	// but if we return early due to an error we need to close it ourselves
+	defer func() {
+		if !deferClose {
+			objReader.Close()
+		}
+	}()
 
 	if vars.Filename == "dash.mpd" {
 		// Get the clip to increment views by cid
 		clip, err := r.Clips.Find(req.Context(), vars.CID)
 
 		if err != nil {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
+			return http.StatusInternalServerError, nil, nil, errors.Wrap(err, "failed to find clip")
 		}
 
 		clip.Views++
 
 		if err := r.Clips.Update(req.Context(), clip, boil.Whitelist(models.ClipColumns.Views)); err != nil {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
+			return http.StatusInternalServerError, nil, nil, errors.Wrap(err, "failed to update clip")
 		}
 	}
 
 	ranges, err := http_range.ParseRange(req.Header.Get("Range"), size)
 
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
-		return
+		return http.StatusBadRequest, StringToStream(errors.Wrap(err, "Invalid Range").Error()), nil, nil
 	}
 
 	if len(ranges) > 1 {
-		http.Error(w, "Requested Range Not Satisfiable", http.StatusRequestedRangeNotSatisfiable)
-		return
+		return http.StatusRequestedRangeNotSatisfiable, StringToStream("Multiple ranges not supported"), nil, nil
 	}
+
+	headers := make(http.Header)
 
 	if len(ranges) == 0 {
 		// Set the content length
-		w.Header().Set("Content-Length", fmt.Sprint(size))
+		headers.Set("Content-Length", fmt.Sprint(size))
 
-		// Copy the object to the response writer
-		_, err = io.Copy(w, objReader)
-		if err != nil {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
-		}
-
-		return
+		deferClose = true
+		return http.StatusOK, objReader, headers, nil
 	} else {
 		// Accept ranges
-		w.Header().Set("Accept-Ranges", "bytes")
-		w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", ranges[0].Start, ranges[0].Start+ranges[0].Length-1, size))
-		w.Header().Set("Content-Length", fmt.Sprint(ranges[0].Length))
+		headers.Set("Accept-Ranges", "bytes")
+		headers.Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", ranges[0].Start, ranges[0].Start+ranges[0].Length-1, size))
+		headers.Set("Content-Length", fmt.Sprint(ranges[0].Length))
 
 		// Seek to the start of the range
 		_, err = objReader.Seek(ranges[0].Start, io.SeekStart)
 
 		if err != nil {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
+			return http.StatusInternalServerError, nil, nil, errors.Wrap(err, "failed to seek to start of range")
 		}
 
-		// Set the status code
-		w.WriteHeader(http.StatusPartialContent)
-
-		io.CopyN(w, objReader, ranges[0].Length)
-		// TODO: Properly handle errors here and ignore if the error is due to the client disconnecting prematurely
+		deferClose = true
+		return http.StatusPartialContent, NewLimitedReadCloser(objReader, ranges[0].Length), headers, nil
 	}
 }
