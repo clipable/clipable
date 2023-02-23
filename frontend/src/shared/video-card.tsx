@@ -18,8 +18,8 @@ export default function VideoCard({ video, progress }: Props) {
   });
 
   const cardBodyClassname = clsx({
-    "card-body p-0 justify-end": video.processing,
-    "card-body p-0": !video.processing,
+    "card-body justify-end": video.processing,
+    "card-body": !video.processing,
   });
 
   return (
