@@ -33,10 +33,10 @@ export default function Page({ params }: { params: { id: string } }) {
             <p className="text-gray-300">{video.description}</p>
           </div>
           <div className="flex-grow"></div>
-          <div className="flex flex-row space-x-2">
-            <p className="text-gray-400 text-xl">{formatDate(video.created_at)}</p>
-            <p className="text-gray-400 text-xl">•</p>
-            <p className="text-gray-400 text-xl">
+          <div className="flex flex-row space-x-2 text-gray-400 text-xl">
+            <p>{formatDate(video.created_at)}</p>
+            <p>•</p>
+            <p>
               {formatViewsCount(video.views)} view{video.views === 1 ? "" : "s"}
             </p>
           </div>
