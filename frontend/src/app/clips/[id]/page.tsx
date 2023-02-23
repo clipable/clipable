@@ -11,12 +11,12 @@ const ShakaPlayer = dynamic(() => import("shaka-player-react"), { ssr: false });
 import "shaka-player-react/dist/controls.css";
 
 export default function Page({ params }: { params: { id: string } }) {
-  const [video, setVideo] = useState<Video | null>(null);
+  const [videoDetails, setVideoDetails] = useState<Video | null>(null);
 
   useEffect(() => {
     const fetchVideo = async () => {
       const vid = await getVideo(params.id);
-      setVideo(vid);
+      setVideoDetails(vid);
     };
     fetchVideo();
   }, [params.id]);
@@ -24,20 +24,20 @@ export default function Page({ params }: { params: { id: string } }) {
   return (
     <main className="max-w-[70%] mt-6 mx-auto">
       <ShakaPlayer src={`/api/clips/${params.id}/dash.mpd`} autoPlay />
-      {video && (
+      {videoDetails && (
         <div className="p-4 flex flex-row">
           <div>
             <div>
-              <h1 className="text-2xl font-bold">{video.title}</h1>
+              <h1 className="text-2xl font-bold">{videoDetails.title}</h1>
             </div>
-            <p className="text-gray-300">{video.description}</p>
+            <p className="text-gray-300">{videoDetails.description}</p>
           </div>
           <div className="flex-grow"></div>
           <div className="flex flex-row space-x-2 text-gray-400 text-xl">
-            <p>{formatDate(video.created_at)}</p>
+            <p>{formatDate(videoDetails.created_at)}</p>
             <p>•</p>
             <p>
-              {formatViewsCount(video.views)} view{video.views === 1 ? "" : "s"}
+              {formatViewsCount(videoDetails.views)} view{videoDetails.views === 1 ? "" : "s"}
             </p>
           </div>
         </div>
