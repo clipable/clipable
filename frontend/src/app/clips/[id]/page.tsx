@@ -27,9 +27,7 @@ export default function Page({ params }: { params: { id: string } }) {
       {videoDetails && (
         <div className="p-4 flex flex-row">
           <div>
-            <div>
-              <h1 className="text-2xl font-bold">{videoDetails.title}</h1>
-            </div>
+            <h1 className="text-2xl font-bold">{videoDetails.title}</h1>
             <p className="text-gray-300">{videoDetails.description}</p>
           </div>
           <div className="flex-grow"></div>
