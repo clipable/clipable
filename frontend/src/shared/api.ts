@@ -36,6 +36,19 @@ export const getVideos = async (): Promise<Video[]> => {
   return response.json();
 };
 
+export const getVideo = async (videoId: string): Promise<Video | null> => {
+  const response = await fetch(`${API_URL}/clips/${videoId}`, {
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (!response.ok) {
+    return null;
+  }
+  return response.json();
+};
+
 export const getUsersVideos = async (userId: string): Promise<Video[]> => {
   const response = await fetch(`${API_URL}/users/${userId}/clips`, {
     credentials: "include",
