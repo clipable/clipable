@@ -166,6 +166,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		"-preset", t.cfg.FFmpeg.Preset,
 		"-tune", t.cfg.FFmpeg.Tune,
 		"-keyint_min", strconv.Itoa(fps),
+		"-threads", strconv.Itoa(t.cfg.FFmpeg.Threads),
 		"-hls_playlist_type", "vod",
 		"-g", strconv.Itoa(fps),
 		"-seg_duration", "2",

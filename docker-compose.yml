@@ -36,11 +36,12 @@ services:
       "
 
   clippable:
-    build: .
+    image: ghcr.io/clipable/clipable:latest
     environment:
       - DEBUG=true
       - LISTENADDR=:8080
       - FFMPEG_CONCURRENCY=1 # How many concurrent ffmpeg processes to run
+      - FFMPEG_THREADS=0 # How many threads to use for a single ffmpeg process to use
       - FFMPEG_PRESET=medium # How much time to spend compressing https://trac.ffmpeg.org/wiki/Encode/H.264#:~:text=preset%20and%20tune-,Preset,-A%20preset%20is
       - FFMPEG_TUNE=film # https://trac.ffmpeg.org/wiki/Encode/H.264#:~:text=x264%20%2D%2Dfullhelp.-,Tune,-You%20can%20optionally
       - DB_HOST=postgres
