@@ -5,7 +5,7 @@ import { Video } from "@/shared/api";
 import { formatViewsCount } from "./views-formatter";
 import { formatDate } from "./date-formatter";
 import VideoCardImage from "./video-card-image";
-
+import Link from "next/link";
 
 interface Props {
   video: Video;
@@ -18,21 +18,42 @@ export default function VideoCard({ video, progress }: Props) {
   });
 
   const cardBodyClassname = clsx({
-    "card-body justify-end": video.processing,
-    "card-body": !video.processing,
+    "card-body p-0 justify-end": video.processing,
+    "card-body p-0": !video.processing,
   });
 
   return (
-    <div className="card card-compact w-96 h-full bg-base-100 shadow-xl min-w-[28rem] min-h-[20rem]">
+    <div className="card card-compact w-96 h-full bg-base-100 min-w-[28rem] min-h-[20rem]">
       <figure className={figureClassname}>
         <VideoCardImage video={video} progress={progress} />
       </figure>
-      <div className={cardBodyClassname}>
+      <div
+        className={cardBodyClassname}
+        style={{
+          padding: 0,
+        }}
+      >
         <div className="flex flex-col text-xl">
-          <div className="truncate card-title">{video.title}</div>
-          <div className="flex flex-row w-full justify-between space-x-2">
-            <div className="mt-2 text-stone-400 text-base">{formatViewsCount(video.views)} view{video.views === 1 ? '' : 's'}</div>
-            <div className="mt-2 text-stone-400 text-base">{formatDate(video.created_at)}</div>
+          <div
+            className="truncate card-title"
+            style={{
+              marginBottom: "0.1rem",
+            }}
+          >
+            {video.title}
+          </div>
+          <Link href={`/users/${video.creator.id}`}>
+            <div className="truncate text-stone-400 text-base font-thin hover:text-stone-200">
+              {video.creator.username}
+            </div>
+          </Link>
+
+          <div className="flex flex-row w-fit space-x-2 text-gray-400 text-base font-thin">
+            <p>
+              {formatViewsCount(video.views)} view{video.views === 1 ? "" : "s"}
+            </p>
+            <p>•</p>
+            <p>{formatDate(video.created_at)}</p>
           </div>
         </div>
       </div>
