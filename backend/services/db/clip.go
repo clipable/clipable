@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"io"
 	"webserver/models"
+	"webserver/modelsx"
 	"webserver/services"
 
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -22,11 +23,17 @@ func NewClips(db *sql.DB, os services.ObjectStore) services.Clips {
 }
 
 func (c *clips) Find(ctx context.Context, cid int64) (*models.Clip, error) {
-	return models.FindClip(ctx, c.db, cid)
+	return models.Clips(
+		qm.Load(models.ClipRels.Creator),
+		models.ClipWhere.ID.EQ(cid),
+	).One(ctx, c.db)
 }
 
 func (c *clips) FindMany(ctx context.Context, mods ...qm.QueryMod) (models.ClipSlice, error) {
-	return models.Clips(mods...).All(ctx, c.db)
+	return models.Clips(modelsx.NewBuilder().
+		Add(mods...).
+		Add(qm.Load(models.ClipRels.Creator))...,
+	).All(ctx, c.db)
 }
 
 func (c *clips) Exists(ctx context.Context, cid int64) (bool, error) {
@@ -44,6 +51,7 @@ func (c *clips) SearchMany(ctx context.Context, query string) (models.ClipSlice,
 		qm.Where(`f_concat_ws(' ', title, "description") ILIKE ?`, "%"+query+"%"),
 		qm.OrderBy(`f_concat_ws(' ', title, "description") <-> ?`, "%"+query+"%"),
 		qm.Limit(10),
+		qm.Load(models.ClipRels.Creator),
 	).All(ctx, c.db)
 }
 
