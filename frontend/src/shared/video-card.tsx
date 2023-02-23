@@ -47,7 +47,6 @@ export default function VideoCard({ video, progress }: Props) {
               {video.creator.username}
             </div>
           </Link>
-
           <div className="flex flex-row w-fit space-x-2 text-gray-400 text-base font-thin">
             <p>
               {formatViewsCount(video.views)} view{video.views === 1 ? "" : "s"}
