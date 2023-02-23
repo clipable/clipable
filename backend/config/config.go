@@ -19,6 +19,7 @@ type Config struct {
 
 	FFmpeg struct {
 		Concurrency int    `default:"1"`
+		Threads     int    `default:"0"`
 		Preset      string `default:"medium"` // https://trac.ffmpeg.org/wiki/Encode/H.264#:~:text=preset%20and%20tune-,Preset,-A%20preset%20is
 		Tune        string `default:"film"`   // https://trac.ffmpeg.org/wiki/Encode/H.264#:~:text=x264%20%2D%2Dfullhelp.-,Tune,-You%20can%20optionally
 	}
