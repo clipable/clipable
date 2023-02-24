@@ -1,3 +1,5 @@
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fclipable%2Fclipable.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fclipable%2Fclipable?ref=badge_shield)
+
 <br>
 
 <p align="center">
@@ -57,3 +59,7 @@ Getting started is easy with Docker!
  You can start by copying our [docker-compose.yml](https://github.com/clipable/clipable/blob/master/docker-compose.yml) and simply run `docker compose up -d`. The site will then be accessible at http://localhost/. If you plan on accessing it from a seperate URL, it's important to set the `COOKIE_DOMAIN` to that domain. You can view documentation about all of our environment variables [here.](https://github.com/clipable/clipable/wiki/Environment-Variables)
 <h2><img height="20" src="./.assets/icon.png">&nbsp;&nbsp;Contributing</h2>
  TODO
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fclipable%2Fclipable.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fclipable%2Fclipable?ref=badge_large)
