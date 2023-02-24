@@ -1,3 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+  font-family: "Library";
+  src: url("./lib3am.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+.library {
+  font-family: "Library";
+}
