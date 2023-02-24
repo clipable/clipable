@@ -36,8 +36,7 @@ View the [features](https://github.com/clipable/clipable/blob/master/README.md#f
 
 - [Features](#features)
 - [Documentation](https://github.com/clipable/clipable/wiki)
-- [Installation](#installation)
-	- [Run using Docker](#run-using-docker)
+- [Run using Docker](#run-using-docker)
 - [Contributing](#contributing)
 
 <h2><img height="20" src="./.assets/icon.png">&nbsp;&nbsp;Features</h2>
@@ -52,9 +51,9 @@ View the [features](https://github.com/clipable/clipable/blob/master/README.md#f
 - [x] FFmpeg based encoding accepts all well known video formats
 - [x] Simple docker based deployment
 
-<h2><img height="20" src="./.assets/icon.png">&nbsp;&nbsp;Installation</h2>
- TODO
-<h2><img height="20" src="./.assets/icon.png">&nbsp;&nbsp;Run using Docker</h2>
- TODO
+<h2><img height="20" src="./.assets/icon.png">&nbsp;&nbsp;Run using Docker</h2>  
+
+Getting started is easy with Docker!  
+ You can start by copying our [docker-compose.yml](https://github.com/clipable/clipable/blob/master/docker-compose.yml) and simply run `docker compose up -d`. The site will then be accessible at http://localhost/. If you plan on accessing it from a seperate URL, it's important to set the `COOKIE_DOMAIN` to that domain. You can view documentation about all of our environment variables [here.](https://github.com/clipable/clipable/wiki/Environment-Variables)
 <h2><img height="20" src="./.assets/icon.png">&nbsp;&nbsp;Contributing</h2>
  TODO
