@@ -18,6 +18,7 @@
     "cssnano": "^5.1.14",
     "daisyui": "^2.50.0",
     "dashjs": "^4.5.2",
+    "dayjs": "^1.11.7",
     "eslint": "8.33.0",
     "eslint-config-next": "13.1.6",
     "next": "13.1.6",
