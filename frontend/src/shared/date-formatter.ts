@@ -1,7 +1,7 @@
-export const formatDate = (date: Date | string): string => {
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(new Date(date));
-};
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(relativeTime);
+
+export const formatDate = (date: Date | string) => {
+  return dayjs(date).fromNow()
+}
