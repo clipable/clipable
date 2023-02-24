@@ -5,7 +5,6 @@ import { logout } from "@/shared/api";
 import Link from "next/link";
 import { useContext } from "react";
 
-
 export default function Header() {
   const userContext = useContext(UserContext);
   return (
@@ -13,7 +12,7 @@ export default function Header() {
       <nav className="flex w-full px-2 lg:px-8" aria-label="Top">
         <div className="flex items-center w-full grow justify-between border-b border-indigo-500 py-1 lg:border-none">
           <Link href="/">
-            <span className="btn btn-ghost normal-case text-xl font-library">Clipable</span>
+            <span className="btn btn-ghost normal-case text-xl library">Clipable</span>
           </Link>
           <div className="space-x-4">
             {userContext.loggedIn && !userContext.loading && (
