@@ -35,7 +35,7 @@ export default function Page({ params }: { params: { id: string } }) {
             <p>
               {formatViewsCount(videoDetails.views)} view{videoDetails.views === 1 ? "" : "s"}
             </p>
-            <p>•</p>
+            <p className="text-sm">•</p>
             <p>{formatDate(videoDetails.created_at)}</p>
           </div>
         </div>
