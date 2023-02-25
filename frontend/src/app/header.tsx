@@ -17,24 +17,42 @@ export default function Header() {
           <div className="space-x-4">
             {userContext.loggedIn && !userContext.loading && (
               <Link href="/upload">
-                <button className="btn btn-primary btn-sm">Upload</button>
+                <button className="btn btn-outline btn-sm">Upload</button>
               </Link>
             )}
-            {!userContext.loggedIn && !userContext.loading && (
+            {!userContext.loggedIn && !userContext.loading ? (
               <Link href="/login">
                 <button className="btn btn-primary btn-sm">Login</button>
               </Link>
-            )}
-            {userContext.loggedIn && !userContext.loading && (
-              <button
-                className="btn btn-outline btn-sm"
-                onClick={async () => {
-                  await logout();
-                  window.location.reload();
-                }}
-              >
-                Logout
-              </button>
+            ) : (
+              <ul className="menu menu-compact menu-horizontal">
+                <li tabIndex={0}>
+                  <a className="uppercase font-semibold">
+                    {userContext.user?.username}
+                    <svg className="fill-current" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"/></svg>
+                  </a>
+                  <ul className="bg-base-100 w-full">
+                    {userContext.loggedIn && !userContext.loading && (
+                      <>
+                        <li className="hover-bordered">
+                          <Link href={`users/${userContext.user?.id}`}>
+                            <p>My Clips</p>
+                          </Link>
+                        </li>
+                        <li
+                          className="hover:text-red-500 hover:border-red-500 hover:border-l-4 border-l-4 border-transparent"
+                          onClick={async () => {
+                            await logout();
+                            window.location.reload();
+                          }}
+                        >
+                          <a>Logout</a>
+                        </li>
+                      </>
+                    )}
+                  </ul>
+                </li>
+              </ul>
             )}
           </div>
         </div>
