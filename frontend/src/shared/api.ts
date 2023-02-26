@@ -108,3 +108,16 @@ export const logout = async (): Promise<boolean> => {
   });
   return response.ok;
 };
+
+export const searchVideos = async (query: string): Promise<Video[]> => {
+  const response = await fetch(`${API_URL}/clips/search?query=${query}`, {
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (response.status === 204) {
+    return [];
+  }
+  return response.json();
+}
