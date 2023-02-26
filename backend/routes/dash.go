@@ -19,7 +19,7 @@ func (r *Routes) GetStreamFile(u *models.User, req *http.Request) (int, io.ReadC
 	}
 
 	// Get the object from the minio server
-	objReader, size, err := r.ObjectStore.GetObject(req.Context(), vars.CID, vars.Filename)
+	objReader, size, etag, err := r.ObjectStore.GetObject(req.Context(), vars.CID, vars.Filename)
 
 	if err != nil {
 		return http.StatusInternalServerError, nil, nil, errors.Wrap(err, "failed to get object")
@@ -65,8 +65,14 @@ func (r *Routes) GetStreamFile(u *models.User, req *http.Request) (int, io.ReadC
 	if len(ranges) == 0 {
 		// Set the content length
 		headers.Set("Content-Length", fmt.Sprint(size))
+		headers.Set("ETag", etag)
 
 		deferClose = true
+
+		if req.Header.Get("If-None-Match") == etag {
+			return http.StatusNotModified, nil, headers, nil
+		}
+
 		return http.StatusOK, objReader, headers, nil
 	} else {
 		// Accept ranges

@@ -65,7 +65,7 @@ func (m *UserProvider) Create(ctx context.Context, user *models.User, columns bo
 
 type ObjectStoreProvider struct {
 	PutObjectHook        func(ctx context.Context, cid int64, filename string, r io.Reader) (int64, error)
-	GetObjectHook        func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error)
+	GetObjectHook        func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, string, error)
 	DeleteObjectHook     func(ctx context.Context, cid int64, filename string) error
 	HasObjectHook        func(ctx context.Context, cid int64, filename string) bool
 	HasActiveUploadsHook func(ctx context.Context, cid int64) bool
@@ -75,7 +75,7 @@ func (m *ObjectStoreProvider) PutObject(ctx context.Context, cid int64, filename
 	return m.PutObjectHook(ctx, cid, filename, r)
 }
 
-func (m *ObjectStoreProvider) GetObject(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
+func (m *ObjectStoreProvider) GetObject(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, string, error) {
 	return m.GetObjectHook(ctx, cid, filename)
 }
 

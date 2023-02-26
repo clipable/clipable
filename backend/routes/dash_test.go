@@ -76,8 +76,8 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 						assert.Equal(t, "1/test.mp4", fmt.Sprintf("%d/%s", cid, filename))
 						return true
 					},
-					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
-						return NewNopReadSeekCloser([]byte("test")), 4, nil
+					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, string, error) {
+						return NewNopReadSeekCloser([]byte("test")), 4, "asd123", nil
 					},
 				},
 			},
@@ -104,8 +104,32 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 						assert.Equal(t, "1/test.mp4", fmt.Sprintf("%d/%s", cid, filename))
 						return true
 					},
-					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
-						return NewNopReadSeekCloser([]byte("test")), 4, nil
+					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, string, error) {
+						return NewNopReadSeekCloser([]byte("test")), 4, "", nil
+					},
+				},
+			},
+		},
+		{
+			name:       "test e-tag match",
+			expected:   http.StatusNotModified,
+			hasBody:    false,
+			bodyLength: -1,
+			vars: &RouteVars{
+				CID:      1,
+				Filename: "test.mp4",
+			},
+			headers: map[string]string{
+				"If-None-Match": "asd123",
+			},
+			group: &services.Group{
+				ObjectStore: &mock.ObjectStoreProvider{
+					HasObjectHook: func(ctx context.Context, cid int64, filename string) bool {
+						assert.Equal(t, "1/test.mp4", fmt.Sprintf("%d/%s", cid, filename))
+						return true
+					},
+					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, string, error) {
+						return NewNopReadSeekCloser([]byte("test")), 4, "asd123", nil
 					},
 				},
 			},
@@ -142,8 +166,8 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 						assert.Equal(t, "1/test.mp4", fmt.Sprintf("%d/%s", cid, filename))
 						return true
 					},
-					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
-						return nil, 0, assert.AnError
+					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, string, error) {
+						return nil, 0, "", assert.AnError
 					},
 				},
 			},
@@ -168,8 +192,8 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 						return true
 					},
 
-					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
-						return NewNopReadSeekCloser([]byte("test")), 4, nil
+					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, string, error) {
+						return NewNopReadSeekCloser([]byte("test")), 4, "", nil
 					},
 				},
 			},
@@ -197,8 +221,8 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 						return true
 					},
 
-					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
-						return NewNopReadSeekCloser([]byte("test")), 4, nil
+					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, string, error) {
+						return NewNopReadSeekCloser([]byte("test")), 4, "", nil
 					},
 				},
 			},
@@ -221,8 +245,8 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 						assert.Equal(t, "1/test.mp4", fmt.Sprintf("%d/%s", cid, filename))
 						return true
 					},
-					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
-						return NewNopReadSeekCloser([]byte("test")), 4, nil
+					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, string, error) {
+						return NewNopReadSeekCloser([]byte("test")), 4, "", nil
 					},
 				},
 			},
@@ -245,8 +269,8 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 						assert.Equal(t, "1/test.mp4", fmt.Sprintf("%d/%s", cid, filename))
 						return true
 					},
-					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
-						return NewNopReadSeekCloser([]byte("test")), 4, nil
+					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, string, error) {
+						return NewNopReadSeekCloser([]byte("test")), 4, "", nil
 					},
 				},
 			},
@@ -269,8 +293,8 @@ func TestRoutes_GetStreamFile(t *testing.T) {
 						assert.Equal(t, "1/test.mp4", fmt.Sprintf("%d/%s", cid, filename))
 						return true
 					},
-					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
-						return NewErrorReadSeekCloser(assert.AnError, nil), 4, nil
+					GetObjectHook: func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, string, error) {
+						return NewErrorReadSeekCloser(assert.AnError, nil), 4, "", nil
 					},
 				},
 			},
