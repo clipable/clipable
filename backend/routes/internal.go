@@ -100,7 +100,7 @@ func (r *Routes) ReadObject(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Get the object from the minio server
-	objReader, size, err := r.ObjectStore.GetObject(context.Background(), cid, vars["file"])
+	objReader, size, _, err := r.ObjectStore.GetObject(context.Background(), cid, vars["file"])
 
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)

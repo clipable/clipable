@@ -34,7 +34,7 @@ type Users interface {
 
 type ObjectStore interface {
 	PutObject(ctx context.Context, cid int64, filename string, r io.Reader) (int64, error)
-	GetObject(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error)
+	GetObject(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, string, error)
 
 	DeleteObject(ctx context.Context, cid int64, filename string) error
 	HasObject(ctx context.Context, cid int64, filename string) bool

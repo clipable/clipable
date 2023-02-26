@@ -141,18 +141,18 @@ func (s *store) PutObject(ctx context.Context, cid int64, filename string, r io.
 	return final.Size, err
 }
 
-func (s *store) GetObject(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, error) {
+func (s *store) GetObject(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, string, error) {
 	obj, err := s.s3.GetObject(ctx, s.cfg.S3.Bucket, fmt.Sprintf("%d/%s", cid, filename), minio.GetObjectOptions{})
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, "", err
 	}
 
 	inf, err := obj.Stat()
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, "", err
 	}
 
-	return obj, inf.Size, err
+	return obj, inf.Size, inf.ETag, nil
 }
 
 func (s *store) DeleteObject(ctx context.Context, cid int64, filename string) error {
