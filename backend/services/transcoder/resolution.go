@@ -2,6 +2,7 @@ package transcoder
 
 import (
 	"encoding/json"
+	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -28,35 +29,18 @@ type FormatInfo struct {
 	Duration string `json:"duration"`
 }
 
-type StreamInfo struct {
-	Width      int    `json:"width"`
-	Height     int    `json:"height"`
-	Index      int    `json:"index"`
-	CodecType  string `json:"codec_type"`
-	RFrameRate string `json:"r_frame_rate"`
-	Duration   string `json:"duration"`
+type TagInfo struct {
+	Rotate string `json:"rotate"`
 }
 
-// https://support.google.com/youtube/answer/1722171?hl=en#zippy=%2Cbitrate
-var QualityPresets = []Quality{
-	// 360p
-	{Width: 640, Height: 360, Bitrate: 1, Framerate: 30},
-	// 480p
-	{Width: 854, Height: 480, Bitrate: 2.5, Framerate: 30},
-	// 720p
-	{Width: 1280, Height: 720, Bitrate: 5, Framerate: 30},
-	// 1080p
-	{Width: 1920, Height: 1080, Bitrate: 8, Framerate: 30},
-	{Width: 1920, Height: 1080, Bitrate: 12, Framerate: 60},
-	// 1440p
-	{Width: 2560, Height: 1440, Bitrate: 16, Framerate: 30},
-	{Width: 2560, Height: 1440, Bitrate: 24, Framerate: 60},
-	// 2160p
-	{Width: 3840, Height: 2160, Bitrate: 45, Framerate: 30},
-	{Width: 3840, Height: 2160, Bitrate: 68, Framerate: 60},
-	// 4320p
-	{Width: 7680, Height: 4320, Bitrate: 160, Framerate: 30},
-	{Width: 7680, Height: 4320, Bitrate: 240, Framerate: 60},
+type StreamInfo struct {
+	Width      int     `json:"width"`
+	Height     int     `json:"height"`
+	Index      int     `json:"index"`
+	CodecType  string  `json:"codec_type"`
+	RFrameRate string  `json:"r_frame_rate"`
+	Duration   string  `json:"duration"`
+	Tags       TagInfo `json:"tags"`
 }
 
 func bitString(bitrate float32) string {
@@ -64,7 +48,7 @@ func bitString(bitrate float32) string {
 }
 
 func GetVideoStats(file string) (width int, height int, fps int, duration time.Duration, audioStreams int, err error) {
-	cmd := exec.Command("ffprobe", "-v", "error", "-show_entries", "format=duration:stream=width,height,r_frame_rate,index,codec_type,duration", "-sexagesimal", "-of", "json", file)
+	cmd := exec.Command("ffprobe", "-v", "error", "-show_entries", "format=duration:stream=width,height,r_frame_rate,index,codec_type,duration:stream_tags=rotate", "-sexagesimal", "-of", "json", file)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return 0, 0, 0, 0, 0, err
@@ -98,6 +82,11 @@ func GetVideoStats(file string) (width int, height int, fps int, duration time.D
 		return 0, 0, 0, 0, 0, err
 	}
 
+	// If the video is rotated 90 or 270 degrees swap the width and height
+	if videoStream.Tags.Rotate == "90" || videoStream.Tags.Rotate == "270" {
+		videoStream.Width, videoStream.Height = videoStream.Height, videoStream.Width
+	}
+
 	return videoStream.Width, videoStream.Height, fps, dur, audioStreams, nil
 }
 
@@ -129,31 +118,41 @@ func ParseSexagesimal(duration string) (time.Duration, error) {
 	return time.Duration(hours)*time.Hour + time.Duration(minutes)*time.Minute + time.Duration(seconds*float64(time.Second)), nil
 }
 
-func GetPresets(width int, height int, fps int, audioStreams int) []string {
+func (t *transcoder) GetPresets(width int, height int, fps int, audioStreams int) []string {
 	if fps < 30 {
 		fps = 30
 	}
 
+	vertical := height > width
+	aspectRatio := "16:9"
+
+	if vertical {
+		aspectRatio = "9:16"
+		width, height = height, width
+	}
+
 	var presets []Quality
-	for _, preset := range QualityPresets {
+	for _, preset := range t.qualityPresets {
 		if preset.Width <= width && preset.Height <= height && preset.Framerate <= fps {
+			if vertical {
+				preset.Width, preset.Height = preset.Height, preset.Width
+			}
 			presets = append(presets, preset)
 		}
 	}
 
-	// TODO: What happens when someone uploads vertical video?
 	if len(presets) == 0 {
-		presets = []Quality{QualityPresets[0]} // If no quality was select use the lowest one
+		presets = []Quality{t.qualityPresets[0]} // If no quality was select use the lowest one
 	}
 
-	ffmpegArgs := []string{}
+	ffmpegArgs := []string{"-aspect", aspectRatio}
 
 	for i, preset := range presets {
 		ffmpegArgs = append(ffmpegArgs,
 			"-map",
 			"v:0",
-			"-s:"+strconv.Itoa(i),
-			strconv.Itoa(preset.Width)+"x"+strconv.Itoa(preset.Height),
+			"-vf:"+strconv.Itoa(i),
+			fmt.Sprintf("scale=w=%d:h=%d:force_original_aspect_ratio=1,pad=%d:%d:(ow-iw)/2:(oh-ih)/2", preset.Width, preset.Height, preset.Width, preset.Height),
 			"-b:v:"+strconv.Itoa(i),
 			bitString(preset.Bitrate),
 			"-maxrate:"+strconv.Itoa(i),

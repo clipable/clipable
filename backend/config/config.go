@@ -18,10 +18,11 @@ type Config struct {
 	MaxUploadSizeBytes int64  `ignored:"true"` // This is set by the parser to the byte value of MaxUploadSize
 
 	FFmpeg struct {
-		Concurrency int    `default:"1"`
-		Threads     int    `default:"0"`
-		Preset      string `default:"medium"` // https://trac.ffmpeg.org/wiki/Encode/H.264#:~:text=preset%20and%20tune-,Preset,-A%20preset%20is
-		Tune        string `default:"film"`   // https://trac.ffmpeg.org/wiki/Encode/H.264#:~:text=x264%20%2D%2Dfullhelp.-,Tune,-You%20can%20optionally
+		Concurrency    int      `default:"1"`
+		Threads        int      `default:"0"`
+		Preset         string   `default:"medium"` // https://trac.ffmpeg.org/wiki/Encode/H.264#:~:text=preset%20and%20tune-,Preset,-A%20preset%20is
+		Tune           string   `default:"film"`   // https://trac.ffmpeg.org/wiki/Encode/H.264#:~:text=x264%20%2D%2Dfullhelp.-,Tune,-You%20can%20optionally
+		QualityPresets []string `split_words:"true" default:"640x360-30@1,854x480-30@2.5,1280x720-30@5,1920x1080-30@8,1920x1080-60@12,2560x1440-30@16,2560x1440-60@24,3840x2160-30@45,3840x2160-60@68,7680x4320-30@160,7680x4320-60@240"`
 	}
 
 	CORS struct {

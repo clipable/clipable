@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"os/exec"
+	"sort"
 	"strconv"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 
 	"github.com/alitto/pond"
 	cmap "github.com/orcaman/concurrent-map/v2"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 )
@@ -24,6 +26,8 @@ type transcoder struct {
 	*services.Group
 	cfg  *config.Config
 	pool *pond.WorkerPool
+
+	qualityPresets []Quality
 
 	progress cmap.ConcurrentMap[int64, *clipProgress]
 	started  bool
@@ -46,28 +50,47 @@ func New(cfg *config.Config, grp *services.Group) (services.Transcoder, error) {
 		started: false,
 	}
 
-	// Find all clips that are marked as processing while starting to resume their processing
-	orphanedClips, err := t.Clips.FindMany(context.Background(), models.ClipWhere.Processing.EQ(true))
-
-	if err != nil {
-		return nil, err
-	}
-
-	for _, clip := range orphanedClips {
-		if err := t.Queue(context.Background(), clip); err != nil {
-			return nil, err
+	// Parse the quality presets
+	for _, preset := range cfg.FFmpeg.QualityPresets {
+		var q Quality
+		if _, err := fmt.Sscanf(preset, "%dx%d-%d@%f", &q.Width, &q.Height, &q.Framerate, &q.Bitrate); err != nil {
+			return nil, errors.Wrap(err, "failed to parse quality preset")
 		}
+
+		// Assert the width and height are 16:9 or very close to it
+		if math.Abs(float64(q.Width)/float64(q.Height)-16.0/9.0) > 0.1 {
+			return nil, fmt.Errorf("invalid aspect ratio for quality preset %s. should be 16:9", preset)
+		}
+
+		t.qualityPresets = append(t.qualityPresets, q)
 	}
+
+	// Assert we have at least one preset
+	if len(t.qualityPresets) == 0 {
+		return nil, fmt.Errorf("no quality presets defined")
+	}
+
+	// Sort the quality presets by bitrate
+	sort.Slice(t.qualityPresets, func(i, j int) bool {
+		return t.qualityPresets[i].Bitrate < t.qualityPresets[j].Bitrate
+	})
 
 	return t, nil
 }
 
 func (t *transcoder) Start() error {
-	if t.started {
-		return fmt.Errorf("transcoder already started")
+	// Find all clips that are marked as processing while starting to resume their processing
+	orphanedClips, err := t.Clips.FindMany(context.Background(), models.ClipWhere.Processing.EQ(true))
+
+	if err != nil {
+		return err
 	}
 
-	t.started = true
+	for _, clip := range orphanedClips {
+		if err := t.Queue(context.Background(), clip); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -124,20 +147,13 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 	// syscall pipe: https://www.codeflict.com/go/syscall-pipe
 	// https://support.google.com/youtube/answer/1722171?hl=en#zippy=%2Cbitrate
 
-	// Wait until we're started listen for requests before attempting to launch ffmpeg
-	for !t.started {
-		time.Sleep(1 * time.Second)
-	}
-
 	log.Infoln("Transcoding video", clip.ID)
 
 	rawURL := fmt.Sprintf("http://127.0.0.1:12786/s3/%d/raw", clip.ID)
 
 	cmd := exec.Command("ffmpeg",
 		"-i", rawURL,
-		"-ss", "00:00:01",
-		"-s", "1280x720",
-		"-qscale:v", "5",
+		"-vf", "scale=1280:-1,crop=1280:720", // Scale to 1280 width, then crop image height to 720
 		"-frames:v", "1",
 		fmt.Sprintf("http://127.0.0.1:12786/s3/%d/thumbnail.jpg", clip.ID),
 	)
@@ -158,7 +174,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		return
 	}
 
-	fmt.Println("Width", width, "Height", height, "FPS", fps, "Duration", duration, "AudioStreams", audioStreams)
+	log.Infoln("Width", width, "Height", height, "FPS", fps, "Duration", duration, "AudioStreams", audioStreams)
 	start := time.Now()
 
 	ffmpegArgs := []string{
@@ -187,7 +203,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		"-progress", fmt.Sprintf("http://127.0.0.1:12786/progress/%d", clip.ID),
 	}
 
-	ffmpegArgs = append(ffmpegArgs, GetPresets(width, height, fps, audioStreams)...)
+	ffmpegArgs = append(ffmpegArgs, t.GetPresets(width, height, fps, audioStreams)...)
 
 	if audioStreams > 0 {
 		ffmpegArgs = append(ffmpegArgs, "-map", "0:a")
