@@ -123,10 +123,10 @@ func (t *transcoder) GetPresets(width int, height int, fps int, audioStreams int
 		fps = 30
 	}
 
-	verticle := height > width
+	vertical := height > width
 	aspectRatio := "16:9"
 
-	if verticle {
+	if vertical {
 		aspectRatio = "9:16"
 		width, height = height, width
 	}
@@ -134,7 +134,7 @@ func (t *transcoder) GetPresets(width int, height int, fps int, audioStreams int
 	var presets []Quality
 	for _, preset := range t.qualityPresets {
 		if preset.Width <= width && preset.Height <= height && preset.Framerate <= fps {
-			if verticle {
+			if vertical {
 				preset.Width, preset.Height = preset.Height, preset.Width
 			}
 			presets = append(presets, preset)
