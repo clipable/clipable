@@ -21,6 +21,11 @@ type Quality struct {
 
 type VideoInfo struct {
 	Streams []StreamInfo `json:"streams"`
+	Format  FormatInfo   `json:"format"`
+}
+
+type FormatInfo struct {
+	Duration string `json:"duration"`
 }
 
 type StreamInfo struct {
@@ -59,7 +64,7 @@ func bitString(bitrate float32) string {
 }
 
 func GetVideoStats(file string) (width int, height int, fps int, duration time.Duration, audioStreams int, err error) {
-	cmd := exec.Command("ffprobe", "-v", "error", "-show_entries", "stream=width,height,r_frame_rate,index,codec_type,duration", "-sexagesimal", "-of", "json", file)
+	cmd := exec.Command("ffprobe", "-v", "error", "-show_entries", "format=duration:stream=width,height,r_frame_rate,index,codec_type,duration", "-sexagesimal", "-of", "json", file)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return 0, 0, 0, 0, 0, err
@@ -87,7 +92,7 @@ func GetVideoStats(file string) (width int, height int, fps int, duration time.D
 
 	audioStreams = lo.CountBy(info.Streams, func(s StreamInfo) bool { return s.CodecType == "audio" })
 
-	dur, err := ParseSexagesimal(videoStream.Duration)
+	dur, err := ParseSexagesimal(info.Format.Duration)
 
 	if err != nil {
 		return 0, 0, 0, 0, 0, err
