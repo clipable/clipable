@@ -207,22 +207,6 @@ func (r *Routes) ParseVars(next http.Handler) http.Handler {
 	})
 }
 
-func (r *Routes) SDCompliance(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		w.Header().Set("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate")
-		w.Header().Set("Pragma", "no-cache")
-		w.Header().Set("Expires", "-1")
-		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.Header().Add("X-Frame-Options", "DENY")
-		w.Header().Add("frame-ancestors", "none")
-		w.Header().Add("frame-src", "none")
-		w.Header().Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
-		w.Header().Add("Content-Security-Policy", "default-src 'none'; font-src 'none'; img-src 'self'; object-src 'none'; script-src 'self'")
-		w.Header().Add("X-XSS-Protection", "0")
-		next.ServeHTTP(w, req)
-	})
-}
-
 func getPaginationMods(req *http.Request, paginationColumn, table, idColumn string) []qm.QueryMod {
 	qms := make([]qm.QueryMod, 0)
 
@@ -347,7 +331,7 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 			"method":  r.Method,
 			"written": humanize.Bytes(lw.written),
 			"read":    humanize.Bytes(uint64(r.ContentLength)),
-			"took":    latency,
+			"took":    latency.Round(time.Millisecond),
 		}).Info(r.URL.Path)
 	})
 }
