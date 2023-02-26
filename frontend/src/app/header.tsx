@@ -3,10 +3,12 @@
 import { UserContext } from "@/context/user-context";
 import { logout } from "@/shared/api";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useContext } from "react";
 
 export default function Header() {
   const userContext = useContext(UserContext);
+  const router = useRouter();
   return (
     <header className="navbar bg-base-300">
       <nav className="flex w-full px-2 lg:px-8" aria-label="Top">
@@ -14,7 +16,17 @@ export default function Header() {
           <Link href="/">
             <span className="btn btn-ghost normal-case text-3xl font-thin library">CLIPABLE</span>
           </Link>
-          <div className="space-x-4">
+          <input
+            type="text"
+            placeholder="Search"
+            className="input input-bordered w-full max-w-lg"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && e.currentTarget.value) {
+                router.push(`/?search=${e.currentTarget.value}`);
+              }
+            }}
+          />
+          <div className="flex flex-row items-center space-x-4">
             {userContext.loggedIn && !userContext.loading && (
               <Link href="/upload">
                 <button className="btn btn-outline btn-sm">Upload</button>
