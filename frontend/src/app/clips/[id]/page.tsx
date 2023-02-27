@@ -29,32 +29,32 @@ export default function Page({ params }: { params: { id: string } }) {
         <ReactShakaPlayer
           src={`/api/clips/${params.id}/dash.mpd`}
           autoPlay
-          />
+        />
       </div>
-          {videoDetails && (
-            <div className="p-4 mx-auto flex flex-row container">
-              <div>
-                <h1 className="text-2xl font-bold w-[90%] max-w-[90%] overflow-hidden text-ellipsis">asdmkalsdmklasdmklaskldaklsdlmkaskldklaklmdmkls</h1>
-                <p className="text-gray-300">{videoDetails.description}</p>
-              </div>
-              <div className="flex-grow"></div>
-              <div className="flex flex-row space-x-2 items-center text-gray-400 text-xl">
-                <p className="flex flex-row">
-                  <p className="hover:text-gray-300">
-                    <Link href={`/users/${videoDetails.creator.id}`}>
-                      {videoDetails.creator.username}
-                    </Link>
-                  </p>
-                </p>
-                <p className="text-sm">•</p>
-                <p>
-                  {formatViewsCount(videoDetails.views)} view{videoDetails.views === 1 ? "" : "s"}
-                </p>
-                <p className="text-sm">•</p>
-                <p>{formatDate(videoDetails.created_at)}</p>
-              </div>
-            </div>
-          )}
+      {videoDetails && (
+        <div className="p-4 mx-auto flex flex-row container">
+          <div>
+            <h1 className="text-2xl font-bold w-[90%] max-w-[90%] overflow-hidden text-ellipsis">asdmkalsdmklasdmklaskldaklsdlmkaskldklaklmdmkls</h1>
+            <p className="text-gray-300">{videoDetails.description}</p>
+          </div>
+          <div className="flex-grow"></div>
+          <div className="flex flex-row space-x-2 items-center text-gray-400 text-xl">
+            <p className="flex flex-row">
+              <p className="hover:text-gray-300">
+                <Link href={`/users/${videoDetails.creator.id}`}>
+                  {videoDetails.creator.username}
+                </Link>
+              </p>
+            </p>
+            <p className="text-sm">•</p>
+            <p>
+              {formatViewsCount(videoDetails.views)} view{videoDetails.views === 1 ? "" : "s"}
+            </p>
+            <p className="text-sm">•</p>
+            <p>{formatDate(videoDetails.created_at)}</p>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
