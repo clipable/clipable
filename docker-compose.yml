@@ -51,7 +51,7 @@ services:
       - DB_PASSWORD=postgres
       - DB_NAME=postgres
       - DB_IDHASHKEY=mydbidkeythatishouldchange123
-      - COOKIE_KEY=mycookiekey12345 # must be 16, 24, or 32 bytes long (AES-128, AES-192, or AES-256)
+      - COOKIE_KEY=mycookiekey12345
       - COOKIE_DOMAIN=localhost
       - S3_BUCKET=clips
       - S3_ACCESS=minio
