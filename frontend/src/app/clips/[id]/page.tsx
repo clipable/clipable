@@ -7,7 +7,6 @@ import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
 import "@mkhuda/react-shaka-player/dist/ui.css";
 import Link from "next/link";
-//import "./youtube-theme.css"
 import "./player.scss"
 
 const ReactShakaPlayer = dynamic(() => import("@mkhuda/react-shaka-player").then(module => module.ReactShakaPlayer), { ssr: false });
