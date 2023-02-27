@@ -25,7 +25,7 @@ RUN pnpm build
 
 FROM ghcr.io/jrottenberg/ffmpeg:5-alpine
 
-RUN apk add --update nodejs
+RUN apk add --update --no-cache nodejs nginx
 
 ENV NODE_ENV production
 
@@ -40,6 +40,7 @@ COPY --from=frontend-builder /home/node/app/.next/standalone ./
 COPY --from=frontend-builder /home/node/app/.next/static ./.next/static
 
 COPY backend/migrations /migrations
+COPY ./nginx.conf /etc/nginx/nginx.conf
 COPY --from=backend-build /app/clipable /
 
-ENTRYPOINT /clipable & node server.js
+ENTRYPOINT /clipable & node server.js & nginx -g "daemon off;"
