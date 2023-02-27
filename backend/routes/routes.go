@@ -108,7 +108,7 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 		}
 
 		r.Router = cors.New(cors.Options{
-			AllowedOrigins: []string{cfg.CORS.Origin, "https://reference.dashif.org", "https://shaka-player-demo.appspot.com"},
+			AllowedOrigins: []string{cfg.CORS.Origin, "https://reference.dashif.org", "https://shaka-player-demo.appspot.com", "https://csb-pygk8-mkhuda.vercel.app"},
 			AllowedMethods: []string{
 				http.MethodGet,
 				http.MethodPost,

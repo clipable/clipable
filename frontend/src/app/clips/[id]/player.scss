@@ -1,0 +1,37 @@
+video.shaka-video {
+    max-height: 80vh;
+    max-width: 80vh;
+    height: 80vh;
+    width: 80vw;
+}
+
+.mk-theme .shaka-seek-bar-container input[type="range"]::-ms-thumb {
+    box-shadow: 0px 0px 0px #000000;
+    border: 0px solid #000000;
+    height: 19px;
+    width: 19px;
+    border-radius: 26px;
+    background: #2eb5c0;
+    cursor: pointer;
+}
+
+.mk-theme .shaka-seek-bar-container input[type="range"]::-webkit-slider-thumb {
+    box-shadow: 0px 0px 0px #000000;
+    border: 0px solid #000000;
+    height: 19px;
+    width: 19px;
+    border-radius: 26px;
+    background: #2eb5c0;
+    cursor: pointer;
+    -webkit-appearance: none;
+}
+
+.mk-theme .shaka-seek-bar-container input[type="range"]::-moz-range-thumb {
+    box-shadow: 0px 0px 0px #000000;
+    border: 0px solid #000000;
+    height: 16px;
+    width: 16px;
+    border-radius: 26px;
+    background: #2eb5c0;
+    cursor: pointer;
+}

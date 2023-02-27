@@ -55,7 +55,7 @@ export default function Header() {
                     {userContext.loggedIn && !userContext.loading && (
                       <>
                         <li className="hover-bordered">
-                          <Link href={`users/${userContext.user?.id}`}>
+                          <Link href={`/users/${userContext.user?.id}`}>
                             <p>My Clips</p>
                           </Link>
                         </li>
