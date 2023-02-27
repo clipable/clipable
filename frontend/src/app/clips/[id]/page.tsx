@@ -32,8 +32,8 @@ export default function Page({ params }: { params: { id: string } }) {
       </div>
       {videoDetails && (
         <div className="p-4 mx-auto flex flex-row container">
-          <div>
-            <h1 className="text-2xl font-bold w-[90%] max-w-[90%] overflow-hidden text-ellipsis">asdmkalsdmklasdmklaskldaklsdlmkaskldklaklmdmkls</h1>
+          <div className="w-full  overflow-hidden text-ellipsis whitespace-nowrap">
+            <h1 className="text-2xl font-bold w-[90%] max-w-[90%] overflow-hidden whitespace-nowrap text-ellipsis">{videoDetails.title}</h1>
             <p className="text-gray-300">{videoDetails.description}</p>
           </div>
           <div className="flex-grow"></div>
@@ -46,11 +46,13 @@ export default function Page({ params }: { params: { id: string } }) {
               </p>
             </p>
             <p className="text-sm">•</p>
-            <p>
+            <p className="whitespace-nowrap">
               {formatViewsCount(videoDetails.views)} view{videoDetails.views === 1 ? "" : "s"}
             </p>
             <p className="text-sm">•</p>
-            <p>{formatDate(videoDetails.created_at)}</p>
+            <p className="whitespace-nowrap">
+              {formatDate(videoDetails.created_at)}
+            </p>
           </div>
         </div>
       )}
