@@ -134,10 +134,11 @@ func (t *transcoder) GetPresets(width int, height int, fps int, audioStreams int
 	var presets []Quality
 	for _, preset := range t.qualityPresets {
 		if preset.Width <= width && preset.Height <= height && preset.Framerate <= fps {
+			targetPreset := preset
 			if vertical {
-				preset.Width, preset.Height = preset.Height, preset.Width
+				targetPreset.Width, targetPreset.Height = preset.Height, preset.Width
 			}
-			presets = append(presets, preset)
+			presets = append(presets, targetPreset)
 		}
 	}
 
@@ -151,6 +152,8 @@ func (t *transcoder) GetPresets(width int, height int, fps int, audioStreams int
 		ffmpegArgs = append(ffmpegArgs,
 			"-map",
 			"v:0",
+			"-s:v:"+strconv.Itoa(i),
+			fmt.Sprintf("%dx%d", preset.Width, preset.Height),
 			"-vf:"+strconv.Itoa(i),
 			fmt.Sprintf("scale=w=%d:h=%d:force_original_aspect_ratio=1,pad=%d:%d:(ow-iw)/2:(oh-ih)/2", preset.Width, preset.Height, preset.Width, preset.Height),
 			"-b:v:"+strconv.Itoa(i),
