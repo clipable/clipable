@@ -342,13 +342,16 @@ type timeoutResponseWriter struct {
 }
 
 func (tw *timeoutResponseWriter) WriteHeader(code int) {
-
 	length, err := strconv.Atoi(tw.Header().Get("Content-Length"))
 
+	deadline := time.Now().Add(5 * time.Second)
+
 	if err == nil {
-		if err := tw.rc.SetWriteDeadline(time.Now().Add(timeoutFromLength(int64(length)))); err != nil {
-			log.WithError(err).Errorln("Failed to set write deadline")
-		}
+		deadline = time.Now().Add(timeoutFromLength(int64(length)))
+	}
+
+	if err := tw.rc.SetWriteDeadline(deadline); err != nil {
+		log.WithError(err).Errorln("Failed to set write deadline")
 	}
 
 	tw.ResponseWriter.WriteHeader(code)
@@ -362,8 +365,15 @@ func DynamicTimeoutMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctr := http.NewResponseController(w)
 
-		if err := ctr.SetReadDeadline(time.Now().Add(timeoutFromLength(r.ContentLength))); err != nil {
+		deadline := time.Now().Add(timeoutFromLength(r.ContentLength))
+
+		if err := ctr.SetReadDeadline(deadline); err != nil {
 			log.WithError(err).Errorln("Failed to set read deadline")
+		}
+
+		// Write deadline also covers reading the request body, so we can set it to the same value until we know the response length
+		if err := ctr.SetWriteDeadline(deadline); err != nil {
+			log.WithError(err).Errorln("Failed to set write deadline")
 		}
 
 		next.ServeHTTP(&timeoutResponseWriter{w, ctr}, r)
