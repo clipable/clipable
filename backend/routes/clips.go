@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"io"
-	"log"
 	"mime"
 	"mime/multipart"
+	"net"
 	"net/http"
 	"strings"
 	"webserver/models"
@@ -25,7 +25,7 @@ func (r *Routes) UploadClip(user *models.User, req *http.Request) (int, []byte, 
 	mediaType, params, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
 
 	if err != nil {
-		log.Fatal(err)
+		return http.StatusBadRequest, []byte(err.Error()), nil
 	}
 
 	// Check if the media type is multipart
@@ -93,7 +93,9 @@ func (r *Routes) UploadClip(user *models.User, req *http.Request) (int, []byte, 
 		return http.StatusBadRequest, []byte("Video too large"), nil
 	}
 
-	if err != nil {
+	if e, ok := err.(net.Error); ok && e.Timeout() {
+		return http.StatusRequestTimeout, nil, errors.Wrap(err, "upload timed out")
+	} else if err != nil {
 		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to upload video")
 	}
 
