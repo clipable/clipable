@@ -37,6 +37,7 @@ type ObjectStore interface {
 	GetObject(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, string, error)
 
 	DeleteObject(ctx context.Context, cid int64, filename string) error
+	DeleteObjects(ctx context.Context, cid int64) error
 	HasObject(ctx context.Context, cid int64, filename string) bool
 	HasActiveUploads(ctx context.Context, cid int64) bool
 }
