@@ -3,6 +3,7 @@ video.shaka-video {
     max-width: 80vh;
     height: 80vh;
     width: 80vw;
+    z-index: -1;
 }
 
 .mk-theme .shaka-seek-bar-container input[type="range"]::-ms-thumb {
