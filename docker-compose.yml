@@ -40,7 +40,7 @@ services:
     # All of these environment variables are documented here: https://github.com/clipable/clipable/wiki/Environment-Variables
     environment:
       - DEBUG=true
-      - LISTENADDR=:8080
+      - MAX_UPLOAD_SIZE=5GB
       - FFMPEG_CONCURRENCY=1 
       - FFMPEG_THREADS=0
       - FFMPEG_PRESET=medium
@@ -58,7 +58,7 @@ services:
       - S3_SECRET=myminiokeythatishouldchange123
       - S3_ADDRESS=minio:9000
     ports:
-      - 80:3000
+      - 80:80
     depends_on:
       postgres:
         condition: service_healthy
