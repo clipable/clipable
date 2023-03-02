@@ -37,7 +37,7 @@ export default function Header() {
                 <button className="btn btn-primary btn-sm">Login</button>
               </Link>
             ) : (
-              <ul className="menu menu-compact menu-horizontal">
+              <ul className="z-1 menu menu-compact menu-horizontal">
                 <li tabIndex={0}>
                   <a className="uppercase font-semibold">
                     {userContext.user?.username}
@@ -48,10 +48,13 @@ export default function Header() {
                       height="20"
                       viewBox="0 0 24 24"
                     >
-                      <path d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z" />
+                      <path
+                        fill-rule="evenodd"
+                        d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+                        clip-rule="evenodd"/>
                     </svg>
                   </a>
-                  <ul className="bg-base-100 w-full">
+                  <ul className="absolute z-[1000] bg-base-100 w-full">
                     {userContext.loggedIn && !userContext.loading && (
                       <>
                         <li className="hover-bordered">
