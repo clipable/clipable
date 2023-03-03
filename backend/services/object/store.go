@@ -6,13 +6,16 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"strconv"
 	"sync/atomic"
 	"webserver/config"
 	"webserver/services"
 
 	. "github.com/docker/go-units"
+	"github.com/friendsofgo/errors"
 	"github.com/minio/minio-go/v7"
 	cmap "github.com/orcaman/concurrent-map/v2"
+	log "github.com/sirupsen/logrus"
 )
 
 type store struct {
@@ -160,6 +163,34 @@ func (s *store) GetObject(ctx context.Context, cid int64, filename string) (io.R
 
 func (s *store) DeleteObject(ctx context.Context, cid int64, filename string) error {
 	return s.s3.RemoveObject(ctx, s.cfg.S3.Bucket, fmt.Sprintf("%d/%s", cid, filename), minio.RemoveObjectOptions{})
+}
+
+func (s *store) DeleteObjects(ctx context.Context, cid int64) error {
+	objectsCh := make(chan minio.ObjectInfo)
+
+	// Send object names that are needed to be removed to objectsCh
+	// Todo: make sure we aren't leaking go-routines using this terrible pattern
+	go func() {
+		defer close(objectsCh)
+		// List all objects from a bucket-name with a matching prefix.
+		opts := minio.ListObjectsOptions{Prefix: strconv.FormatInt(cid, 10), Recursive: true}
+		for object := range s.s3.ListObjects(context.Background(), s.cfg.S3.Bucket, opts) {
+			if object.Err != nil {
+				log.WithError(object.Err).Error("failed to list object")
+			}
+			objectsCh <- object
+		}
+	}()
+
+	// Call RemoveObjects API
+	errorCh := s.s3.RemoveObjects(context.Background(), s.cfg.S3.Bucket, objectsCh, minio.RemoveObjectsOptions{})
+
+	// Print errors received from RemoveObjects API
+	for e := range errorCh {
+		return errors.Wrap(e.Err, "failed to delete object")
+	}
+
+	return nil
 }
 
 func (s *store) HasObject(ctx context.Context, cid int64, filename string) bool {
