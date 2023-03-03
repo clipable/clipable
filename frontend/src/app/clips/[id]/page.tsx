@@ -1,19 +1,24 @@
 "use client";
 
-import { getVideo, Video } from "@/shared/api";
+import { deleteVideo, getVideo, Video } from "@/shared/api";
 import { formatDate } from "@/shared/date-formatter";
 import { formatViewsCount } from "@/shared/views-formatter";
 import dynamic from "next/dynamic";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import "@mkhuda/react-shaka-player/dist/ui.css";
 import Link from "next/link";
 import "./player.scss"
+import trashcan from "../../../../public/trashcan.svg"
+import { UserContext } from "@/context/user-context";
+import { useRouter } from "next/navigation";
 
 const ReactShakaPlayer = dynamic(() => import("@mkhuda/react-shaka-player").then(module => module.ReactShakaPlayer), { ssr: false });
 
 export default function Page({ params }: { params: { id: string } }) {
   const [videoDetails, setVideoDetails] = useState<Video | null>(null);
-
+  const userContext = useContext(UserContext);
+  const router = useRouter();
+  
   useEffect(() => {
     const fetchVideo = async () => {
       const vid = await getVideo(params.id);
@@ -53,6 +58,17 @@ export default function Page({ params }: { params: { id: string } }) {
             <p className="whitespace-nowrap">
               {formatDate(videoDetails.created_at)}
             </p>
+            {videoDetails.creator.id === userContext.user?.id && (
+              <>
+                <p className="text-sm">•</p>
+                <img src={trashcan.src} className="w-4 text-gray-400 hover:text-gray-300 cursor-pointer" alt="delete clip" title="Delete Clip" onClick={
+                  async () => {
+                    await deleteVideo(videoDetails.id);
+                    router.push("/");
+                  }
+                } />
+              </>
+            )}
           </div>
         </div>
       )}
