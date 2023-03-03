@@ -250,9 +250,17 @@ func (r *Routes) DeleteClip(user *models.User, req *http.Request) (int, []byte, 
 		return http.StatusForbidden, nil, nil
 	}
 
+	if clip.Processing {
+		return http.StatusConflict, []byte("clip is still processing"), nil
+	}
+
 	// Delete the clip
 	if err := r.Clips.Delete(req.Context(), clip); err != nil {
 		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to delete clip")
+	}
+
+	if err := r.ObjectStore.DeleteObjects(req.Context(), clip.ID); err != nil {
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to delete clip objects")
 	}
 
 	return http.StatusNoContent, nil, nil
