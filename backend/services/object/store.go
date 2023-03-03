@@ -82,6 +82,9 @@ func (s *store) PutObject(ctx context.Context, cid int64, filename string, r io.
 	deletionObjects := make([]minio.ObjectInfo, len(parts))
 
 	for i := 0; i < len(parts); i++ {
+		if ctx.Err() != nil {
+			return 0, errors.Wrap(ctx.Err(), "context error")
+		}
 		n, err := io.ReadFull(r, buffer)
 		if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
 			return 0, err
