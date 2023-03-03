@@ -60,7 +60,7 @@ export default function Home() {
 
   return (
     <main className="h-full">
-      <div className="container mx-auto py-3">
+      <div className="flex justify-center py-3 mx-3">
         {videos?.length === 0 && (
           <div className="flex flex-col items-center justify-center w-full">
             <h1 className="text-4xl font-bold">No videos found</h1>
@@ -68,9 +68,9 @@ export default function Home() {
           </div>
         )}
         {videos && videos.length > 0 && (
-          <ul role="list" className="grid grid-cols-3 gap-24">
+          <ul role="list" className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-10 xl:gap-16 2xl:gap-24">
             {videos.map((video) => (
-              <li key={video.id}>
+              <li className="m-0" key={video.id}>
                 {video.processing ? (
                   <VideoCard video={video} progress={videoProgresses[video.id]} />
                 ) : (

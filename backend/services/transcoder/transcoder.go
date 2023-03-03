@@ -198,7 +198,9 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		"-single_file", "1",
 		"-x264opts", "no-scenecut",
 		"-streaming", "0",
-		"-movflags", "+faststart",
+		"-movflags", "+faststart+dash+global_sidx",
+		"-global_sidx", "1",
+		"-http_persistent", "1",
 		"-utc_timing_url", "https://time.akamai.com/?iso",
 		"-progress", fmt.Sprintf("http://127.0.0.1:12786/progress/%d", clip.ID),
 	}

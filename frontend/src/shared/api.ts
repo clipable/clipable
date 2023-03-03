@@ -49,6 +49,19 @@ export const getVideo = async (videoId: string): Promise<Video | null> => {
   return response.json();
 };
 
+export const deleteVideo = async (videoId: string): Promise<boolean> => {
+  const response = await fetch(`${API_URL}/clips/${videoId}`, {
+    credentials: "include",
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  return response.ok;
+};
+
+
 export const getUsersVideos = async (userId: string): Promise<Video[]> => {
   const response = await fetch(`${API_URL}/users/${userId}/clips`, {
     credentials: "include",

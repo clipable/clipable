@@ -43,7 +43,7 @@ func (r *Routes) UploadClip(user *models.User, req *http.Request) (int, []byte, 
 	}
 
 	if err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to read json multipart body")
 	}
 
 	if json.FormName() != "json" {
@@ -65,7 +65,7 @@ func (r *Routes) UploadClip(user *models.User, req *http.Request) (int, []byte, 
 	}
 
 	if err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to read video multipart body")
 	}
 
 	// Check if the video part is a video
@@ -79,7 +79,7 @@ func (r *Routes) UploadClip(user *models.User, req *http.Request) (int, []byte, 
 	tx, err := r.Clips.Create(req.Context(), model, user, boil.Whitelist(clip.GetUpdateWhitelist()...))
 
 	if err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to create clip")
 	}
 
 	// Always attempt to rollback, even if it succeeds, if the tx is committed, this is a no-op
@@ -100,11 +100,11 @@ func (r *Routes) UploadClip(user *models.User, req *http.Request) (int, []byte, 
 	}
 
 	if err := tx.Commit(); err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to commit transaction")
 	}
 
 	if err := r.Transcoder.Queue(context.Background(), model); err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to queue clip for transcoding")
 	}
 
 	return modelsx.ClipFromModel(model).Marshal()
@@ -118,7 +118,7 @@ func (r *Routes) GetClip(user *models.User, req *http.Request) (int, []byte, err
 	if err == sql.ErrNoRows {
 		return http.StatusNotFound, nil, nil
 	} else if err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to get clip")
 	}
 
 	return modelsx.ClipFromModel(clip).Marshal()
@@ -133,7 +133,7 @@ func (r *Routes) GetProgress(user *models.User, req *http.Request) (int, []byte,
 	clip, err := r.Clips.FindMany(req.Context(), models.ClipWhere.ID.IN(queryparams.CID))
 
 	if err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to find many clips")
 	}
 
 	if len(clip) == 0 {
@@ -170,7 +170,7 @@ func (r *Routes) GetClips(user *models.User, req *http.Request) (int, []byte, er
 	)
 
 	if err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to find many clips")
 	}
 
 	if len(clips) == 0 {
@@ -184,7 +184,7 @@ func (r *Routes) SearchClips(user *models.User, req *http.Request) (int, []byte,
 	clips, err := r.Clips.SearchMany(req.Context(), req.URL.Query().Get("query"))
 
 	if err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to search clips")
 	}
 
 	if len(clips) == 0 {
@@ -206,7 +206,7 @@ func (r *Routes) UpdateClip(user *models.User, req *http.Request) (int, []byte, 
 	if err == sql.ErrNoRows {
 		return http.StatusNotFound, nil, nil
 	} else if err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to get clip")
 	}
 
 	if clip.CreatorID != user.ID {
@@ -225,7 +225,7 @@ func (r *Routes) UpdateClip(user *models.User, req *http.Request) (int, []byte, 
 	// Update the clip
 
 	if err := r.Clips.Update(req.Context(), model, boil.Whitelist(clipx.GetUpdateWhitelist()...)); err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to update clip")
 	}
 
 	return modelsx.ClipFromModel(model).Marshal()
@@ -243,16 +243,24 @@ func (r *Routes) DeleteClip(user *models.User, req *http.Request) (int, []byte, 
 	if err == sql.ErrNoRows {
 		return http.StatusNotFound, nil, nil
 	} else if err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to get clip")
 	}
 
 	if clip.CreatorID != user.ID {
 		return http.StatusForbidden, nil, nil
 	}
 
+	if clip.Processing {
+		return http.StatusConflict, []byte("clip is still processing"), nil
+	}
+
 	// Delete the clip
 	if err := r.Clips.Delete(req.Context(), clip); err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to delete clip")
+	}
+
+	if err := r.ObjectStore.DeleteObjects(req.Context(), clip.ID); err != nil {
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to delete clip objects")
 	}
 
 	return http.StatusNoContent, nil, nil

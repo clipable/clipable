@@ -67,6 +67,7 @@ type ObjectStoreProvider struct {
 	PutObjectHook        func(ctx context.Context, cid int64, filename string, r io.Reader) (int64, error)
 	GetObjectHook        func(ctx context.Context, cid int64, filename string) (io.ReadSeekCloser, int64, string, error)
 	DeleteObjectHook     func(ctx context.Context, cid int64, filename string) error
+	DeleteObjectsHook    func(ctx context.Context, cid int64) error
 	HasObjectHook        func(ctx context.Context, cid int64, filename string) bool
 	HasActiveUploadsHook func(ctx context.Context, cid int64) bool
 }
@@ -81,6 +82,9 @@ func (m *ObjectStoreProvider) GetObject(ctx context.Context, cid int64, filename
 
 func (m *ObjectStoreProvider) DeleteObject(ctx context.Context, cid int64, filename string) error {
 	return m.DeleteObjectHook(ctx, cid, filename)
+}
+func (m *ObjectStoreProvider) DeleteObjects(ctx context.Context, cid int64) error {
+	return m.DeleteObjectsHook(ctx, cid)
 }
 
 func (m *ObjectStoreProvider) HasObject(ctx context.Context, cid int64, filename string) bool {
