@@ -68,7 +68,7 @@ func New(cfg *config.Config) (*Server, error) {
 	modelsx.SetHashEncoder(cfg.DB.IDHashKey)
 
 	cookieStore := sessions.NewCookieStore([]byte(cfg.Cookie.Key), []byte(cfg.Cookie.Key))
-	cookieStore.Options.SameSite = http.SameSiteLaxMode
+	cookieStore.Options.SameSite = http.SameSiteStrictMode
 	cookieStore.Options.Domain = cfg.Cookie.Domain
 	cookieStore.MaxAge(int((30 * (24 * time.Hour)).Seconds())) // 30 Days
 
