@@ -1,0 +1,1 @@
+ALTER TABLE "clips" ADD "unlisted" boolean NOT NULL DEFAULT false;

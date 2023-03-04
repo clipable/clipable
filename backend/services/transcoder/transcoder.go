@@ -80,7 +80,7 @@ func New(cfg *config.Config, grp *services.Group) (services.Transcoder, error) {
 
 func (t *transcoder) Start() error {
 	// Find all clips that are marked as processing while starting to resume their processing
-	orphanedClips, err := t.Clips.FindMany(context.Background(), models.ClipWhere.Processing.EQ(true))
+	orphanedClips, err := t.Clips.FindMany(context.Background(), &models.User{ID: -1}, models.ClipWhere.Processing.EQ(true))
 
 	if err != nil {
 		return err

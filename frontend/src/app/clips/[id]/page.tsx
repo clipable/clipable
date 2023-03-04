@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteVideo, getVideo, Video } from "@/shared/api";
+import { deleteCip, getClip, Clip } from "@/shared/api";
 import { formatDate } from "@/shared/date-formatter";
 import { formatViewsCount } from "@/shared/views-formatter";
 import dynamic from "next/dynamic";
@@ -17,7 +17,7 @@ const ReactShakaPlayer = dynamic(() => import("@mkhuda/react-shaka-player").then
 });
 
 export default function Page({ params }: { params: { id: string } }) {
-  const [videoDetails, setVideoDetails] = useState<Video | null>(null);
+  const [videoDetails, setVideoDetails] = useState<Clip | null>(null);
   const userContext = useContext(UserContext);
   const router = useRouter();
   let [mainPlayer, setMainPlayer] = useState({});
@@ -43,7 +43,7 @@ export default function Page({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     const fetchVideo = async () => {
-      const vid = await getVideo(params.id);
+      const vid = await getClip(params.id);
       setVideoDetails(vid);
     };
     fetchVideo();
@@ -57,13 +57,16 @@ export default function Page({ params }: { params: { id: string } }) {
       {videoDetails && (
         <div className="p-4 mx-auto flex flex-row container">
           <div className="w-full  overflow-hidden text-ellipsis whitespace-nowrap">
-            <h1 className="text-2xl font-bold w-[90%] max-w-[90%] overflow-hidden whitespace-nowrap text-ellipsis">
-              {videoDetails.title}
-            </h1>
+            <div className="flex flex-row space-x-4 items-center">
+              <h1 className="text-2xl font-bold max-w-[90%] overflow-hidden whitespace-nowrap text-ellipsis">
+                {videoDetails.title}
+              </h1>
+            </div>
+            {videoDetails.unlisted && <div className="badge badge-outline">unlisted</div>}
             <p className="text-gray-300">{videoDetails.description}</p>
           </div>
           <div className="flex-grow"></div>
-          <div className="flex flex-row space-x-2 items-center text-gray-400 text-xl">
+          <div className="flex flex-row self-start space-x-2 items-center text-gray-400 text-xl">
             <p className="flex flex-row">
               <p className="hover:text-gray-300">
                 <Link href={`/users/${videoDetails.creator.id}`}>{videoDetails.creator.username}</Link>
@@ -84,7 +87,7 @@ export default function Page({ params }: { params: { id: string } }) {
                   alt="delete clip"
                   title="Delete Clip"
                   onClick={async () => {
-                    await deleteVideo(videoDetails.id);
+                    await deleteCip(videoDetails.id);
                     router.push("/");
                   }}
                 />

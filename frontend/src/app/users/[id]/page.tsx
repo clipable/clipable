@@ -1,17 +1,17 @@
 "use client";
 
-import { getUsersVideos, Progress, Video, ProgressObject } from "@/shared/api";
-import VideoCard from "@/shared/video-card";
+import { getUsersClips, Progress, Clip, ProgressObject } from "@/shared/api";
+import VideoCard from "@/shared/clip-card";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
 export default function Home({ params }: { params: { id: string } }) {
-  const [videos, setVideos] = useState<Video[]>([]);
+  const [videos, setVideos] = useState<Clip[]>([]);
   const [videoProgresses, setVideoProgresses] = useState<ProgressObject>({});
 
   useEffect(() => {
     const getVids = async () => {
-      const vids = await getUsersVideos(params.id);
+      const vids = await getUsersClips(params.id);
       setVideos(vids);
     };
     getVids();

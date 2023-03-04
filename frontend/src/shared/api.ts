@@ -6,14 +6,15 @@ export interface User {
   joined_at: string;
 }
 
-export interface Video {
-  id: string;
-  title: string;
-  description?: string;
+export interface Clip {
   created_at: string;
   creator: User;
-  views: number;
+  description?: string;
+  id: string;
   processing: boolean;
+  title: string;
+  unlisted: boolean;
+  views: number;
 }
 
 export type ProgressObject = Record<string, number>;
@@ -23,7 +24,7 @@ export interface Progress {
 }
 
 // Client only
-export const getVideos = async (): Promise<Video[]> => {
+export const getClips = async (): Promise<Clip[]> => {
   const response = await fetch(`${API_URL}/clips`, {
     credentials: "include",
     headers: {
@@ -36,7 +37,7 @@ export const getVideos = async (): Promise<Video[]> => {
   return response.json();
 };
 
-export const getVideo = async (videoId: string): Promise<Video | null> => {
+export const getClip = async (videoId: string): Promise<Clip | null> => {
   const response = await fetch(`${API_URL}/clips/${videoId}`, {
     credentials: "include",
     headers: {
@@ -49,7 +50,7 @@ export const getVideo = async (videoId: string): Promise<Video | null> => {
   return response.json();
 };
 
-export const deleteVideo = async (videoId: string): Promise<boolean> => {
+export const deleteCip = async (videoId: string): Promise<boolean> => {
   const response = await fetch(`${API_URL}/clips/${videoId}`, {
     credentials: "include",
     method: "DELETE",
@@ -62,7 +63,7 @@ export const deleteVideo = async (videoId: string): Promise<boolean> => {
 };
 
 
-export const getUsersVideos = async (userId: string): Promise<Video[]> => {
+export const getUsersClips = async (userId: string): Promise<Clip[]> => {
   const response = await fetch(`${API_URL}/users/${userId}/clips`, {
     credentials: "include",
     headers: {
@@ -122,7 +123,7 @@ export const logout = async (): Promise<boolean> => {
   return response.ok;
 };
 
-export const searchVideos = async (query: string): Promise<Video[]> => {
+export const searchClips = async (query: string): Promise<Clip[]> => {
   const response = await fetch(`${API_URL}/clips/search?query=${query}`, {
     credentials: "include",
     headers: {

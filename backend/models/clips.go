@@ -31,6 +31,7 @@ type Clip struct {
 	Processing  bool        `boil:"processing" json:"processing" toml:"processing" yaml:"processing"`
 	CreatedAt   time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	Views       int64       `boil:"views" json:"views" toml:"views" yaml:"views"`
+	Unlisted    bool        `boil:"unlisted" json:"unlisted" toml:"unlisted" yaml:"unlisted"`
 
 	R *clipR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L clipL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -44,6 +45,7 @@ var ClipColumns = struct {
 	Processing  string
 	CreatedAt   string
 	Views       string
+	Unlisted    string
 }{
 	ID:          "id",
 	Title:       "title",
@@ -52,6 +54,7 @@ var ClipColumns = struct {
 	Processing:  "processing",
 	CreatedAt:   "created_at",
 	Views:       "views",
+	Unlisted:    "unlisted",
 }
 
 var ClipTableColumns = struct {
@@ -62,6 +65,7 @@ var ClipTableColumns = struct {
 	Processing  string
 	CreatedAt   string
 	Views       string
+	Unlisted    string
 }{
 	ID:          "clips.id",
 	Title:       "clips.title",
@@ -70,6 +74,7 @@ var ClipTableColumns = struct {
 	Processing:  "clips.processing",
 	CreatedAt:   "clips.created_at",
 	Views:       "clips.views",
+	Unlisted:    "clips.unlisted",
 }
 
 // Generated where
@@ -196,6 +201,7 @@ var ClipWhere = struct {
 	Processing  whereHelperbool
 	CreatedAt   whereHelpertime_Time
 	Views       whereHelperint64
+	Unlisted    whereHelperbool
 }{
 	ID:          whereHelperint64{field: "\"clips\".\"id\""},
 	Title:       whereHelperstring{field: "\"clips\".\"title\""},
@@ -204,6 +210,7 @@ var ClipWhere = struct {
 	Processing:  whereHelperbool{field: "\"clips\".\"processing\""},
 	CreatedAt:   whereHelpertime_Time{field: "\"clips\".\"created_at\""},
 	Views:       whereHelperint64{field: "\"clips\".\"views\""},
+	Unlisted:    whereHelperbool{field: "\"clips\".\"unlisted\""},
 }
 
 // ClipRels is where relationship names are stored.
@@ -234,9 +241,9 @@ func (r *clipR) GetCreator() *User {
 type clipL struct{}
 
 var (
-	clipAllColumns            = []string{"id", "title", "description", "creator_id", "processing", "created_at", "views"}
+	clipAllColumns            = []string{"id", "title", "description", "creator_id", "processing", "created_at", "views", "unlisted"}
 	clipColumnsWithoutDefault = []string{"title", "creator_id"}
-	clipColumnsWithDefault    = []string{"id", "description", "processing", "created_at", "views"}
+	clipColumnsWithDefault    = []string{"id", "description", "processing", "created_at", "views", "unlisted"}
 	clipPrimaryKeyColumns     = []string{"id"}
 	clipGeneratedColumns      = []string{}
 )

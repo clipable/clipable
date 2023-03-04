@@ -17,9 +17,17 @@ func (qb QueryBuilder) Add(queries ...qm.QueryMod) QueryBuilder {
 }
 
 // If adds a qm.QueryMod object to the QueryBuilder if a passed bool is true
-func (qb QueryBuilder) If(value bool, queries ...qm.QueryMod) QueryBuilder {
+func (qb QueryBuilder) IfCb(value bool, mods func() []qm.QueryMod) QueryBuilder {
 	if value {
-		qb = append(qb, queries...)
+		qb = append(qb, mods()...)
+	}
+	return qb
+}
+
+// If adds a qm.QueryMod object to the QueryBuilder if a passed bool is true
+func (qb QueryBuilder) If(value bool, mods ...qm.QueryMod) QueryBuilder {
+	if value {
+		qb = append(qb, mods...)
 	}
 	return qb
 }

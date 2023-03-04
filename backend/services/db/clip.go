@@ -29,9 +29,19 @@ func (c *clips) Find(ctx context.Context, cid int64) (*models.Clip, error) {
 	).One(ctx, c.db)
 }
 
-func (c *clips) FindMany(ctx context.Context, mods ...qm.QueryMod) (models.ClipSlice, error) {
+func (c *clips) FindMany(ctx context.Context, user *models.User, mods ...qm.QueryMod) (models.ClipSlice, error) {
 	return models.Clips(modelsx.NewBuilder().
 		Add(mods...).
+		// If there was a user associated with the query, also show them their unlisted clips.
+		// If the user ID is -1, it's the system trying to get all clips and we shouldn't filter anything
+		IfCb(user != nil && user.ID != -1, func() []qm.QueryMod {
+			return []qm.QueryMod{
+				models.ClipWhere.CreatorID.EQ(user.ID),
+				qm.Or(models.ClipColumns.Unlisted+"=?", false),
+			}
+		}).
+		// If there was no user, don't show unlisted clips
+		If(user == nil, models.ClipWhere.Unlisted.EQ(false)).
 		Add(qm.Load(models.ClipRels.Creator))...,
 	).All(ctx, c.db)
 }
