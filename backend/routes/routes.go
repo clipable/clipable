@@ -11,6 +11,7 @@ import (
 	"webserver/services/object"
 	"webserver/services/transcoder"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/minio/minio-go/v7"
@@ -48,9 +49,9 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 	router.Use(LoggingMiddleware)
 	internalRouter.Use(LoggingMiddleware)
 	router.Use(r.ParseVars)
-	// if !cfg.Debug {
-	// 	router.Use(handlers.RecoveryHandler())
-	// }
+	if !cfg.Debug {
+		router.Use(handlers.RecoveryHandler())
+	}
 	api := router.PathPrefix("/api").Subrouter()
 
 	mdlw := middleware.New(middleware.Config{
