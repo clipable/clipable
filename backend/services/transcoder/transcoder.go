@@ -80,7 +80,7 @@ func New(cfg *config.Config, grp *services.Group) (services.Transcoder, error) {
 
 func (t *transcoder) Start() error {
 	// Find all clips that are marked as processing while starting to resume their processing
-	orphanedClips, err := t.Clips.FindMany(context.Background(), models.ClipWhere.Processing.EQ(true))
+	orphanedClips, err := t.Clips.FindMany(context.Background(), &models.User{ID: -1}, models.ClipWhere.Processing.EQ(true))
 
 	if err != nil {
 		return err
@@ -153,7 +153,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 
 	cmd := exec.Command("ffmpeg",
 		"-i", rawURL,
-		"-vf", "scale=1280:-1,crop=1280:720", // Scale to 1280 width, then crop image height to 720
+		"-vf", `scale='if(gt(dar,1280/720),720*dar,1280)':'if(gt(dar,1280/720),720,1280/dar)',setsar=1,crop=1280:720`, // Scale to 1280 width, then crop image height to 720
 		"-frames:v", "1",
 		fmt.Sprintf("http://127.0.0.1:12786/s3/%d/thumbnail.jpg", clip.ID),
 	)
@@ -200,7 +200,6 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		"-streaming", "0",
 		"-movflags", "+faststart+dash+global_sidx",
 		"-global_sidx", "1",
-		"-http_persistent", "1",
 		"-utc_timing_url", "https://time.akamai.com/?iso",
 		"-progress", fmt.Sprintf("http://127.0.0.1:12786/progress/%d", clip.ID),
 	}

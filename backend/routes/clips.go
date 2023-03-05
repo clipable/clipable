@@ -130,7 +130,7 @@ func (r *Routes) GetClip(user *models.User, req *http.Request) (int, []byte, err
 func (r *Routes) GetProgress(user *models.User, req *http.Request) (int, []byte, error) {
 	queryparams := query(req)
 
-	clip, err := r.Clips.FindMany(req.Context(), models.ClipWhere.ID.IN(queryparams.CID))
+	clip, err := r.Clips.FindMany(req.Context(), user, models.ClipWhere.ID.IN(queryparams.CID))
 
 	if err != nil {
 		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to find many clips")
@@ -166,6 +166,7 @@ func (r *Routes) GetProgress(user *models.User, req *http.Request) (int, []byte,
 func (r *Routes) GetClips(user *models.User, req *http.Request) (int, []byte, error) {
 	clips, err := r.Clips.FindMany(
 		req.Context(),
+		user,
 		getPaginationMods(req, models.ClipColumns.CreatedAt, models.TableNames.Clips, models.ClipColumns.ID)...,
 	)
 
@@ -181,7 +182,7 @@ func (r *Routes) GetClips(user *models.User, req *http.Request) (int, []byte, er
 }
 
 func (r *Routes) SearchClips(user *models.User, req *http.Request) (int, []byte, error) {
-	clips, err := r.Clips.SearchMany(req.Context(), req.URL.Query().Get("query"))
+	clips, err := r.Clips.SearchMany(req.Context(), user, req.URL.Query().Get("query"))
 
 	if err != nil {
 		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to search clips")

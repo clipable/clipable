@@ -45,11 +45,11 @@ type ObjectStore interface {
 // NewGroup Comment for linter
 type Clips interface {
 	Find(ctx context.Context, cid int64) (*models.Clip, error)
-	FindMany(ctx context.Context, mods ...qm.QueryMod) (models.ClipSlice, error)
+	FindMany(ctx context.Context, user *models.User, mods ...qm.QueryMod) (models.ClipSlice, error)
 	Exists(ctx context.Context, cid int64) (bool, error)
 	Delete(ctx context.Context, clip *models.Clip) error
 
-	SearchMany(ctx context.Context, query string) (models.ClipSlice, error)
+	SearchMany(ctx context.Context, user *models.User, query string) (models.ClipSlice, error)
 
 	Update(ctx context.Context, clip *models.Clip, columns boil.Columns) error
 	Create(ctx context.Context, clip *models.Clip, creator *models.User, columns boil.Columns) (ClipTx, error)

@@ -53,7 +53,7 @@ func (r *Routes) Logout(resp http.ResponseWriter, req *http.Request) (int, []byt
 
 	session.Options.MaxAge = -1
 	session.Save(req, resp)
-	resp.Header().Set("Clear-Site-Data", `"cookies", "storage"`)
+	resp.Header().Set("Clear-Site-Data", `"cookies"`)
 
 	return http.StatusOK, nil, nil
 }

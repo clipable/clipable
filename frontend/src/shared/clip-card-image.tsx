@@ -2,17 +2,17 @@
 
 import { useEffect, useState } from "react";
 import{useSpring, animated}from"react-spring";
-import { Video } from "@/shared/api";
+import { Clip } from "@/shared/api";
 
 interface Props {
-  video: Video;
+  video: Clip;
   progress?: number;
 }
 
 /**
  * Renders the thumbnail of a video or the progress of the video if it is being processed
  */
-export default function VideoCardImage({ progress, video }: Props) {
+export default function ClipCardImage({ progress, video }: Props) {
 
   const [oldVal, setOldVal] = useState<number>(0);
 

@@ -104,7 +104,7 @@ func (r *Routes) GetCurrentUser(user *models.User, req *http.Request) (int, []by
 func (r *Routes) GetUsersClips(user *models.User, req *http.Request) (int, []byte, error) {
 	vars := vars(req)
 
-	clips, err := r.Clips.FindMany(req.Context(), modelsx.NewBuilder().
+	clips, err := r.Clips.FindMany(req.Context(), user, modelsx.NewBuilder().
 		Add(models.ClipWhere.CreatorID.EQ(vars.UID)).
 		Add(getPaginationMods(req, models.ClipColumns.CreatedAt, models.TableNames.Clips, models.ClipColumns.ID)...,
 		)...,

@@ -21,6 +21,7 @@ export default function Home() {
   const [description, setDescription] = useState<string>("");
   const [file, setFile] = useState<File>();
   const [clipId, setClipId] = useState<string>("");
+  const [unlisted, setUnlisted] = useState<boolean>(false);
 
   const uploadVideo = async () => {
     if (!file || !title) return;
@@ -29,7 +30,7 @@ export default function Home() {
 
     const multiPartForm = new FormData();
 
-    multiPartForm.append("json", JSON.stringify({ title, description }));
+    multiPartForm.append("json", JSON.stringify({ title, description, unlisted }));
     multiPartForm.append("video", file);
 
     const req = new XMLHttpRequest();
@@ -107,7 +108,7 @@ export default function Home() {
 
   return (
     <main className="h-full">
-      <div className="container mx-auto flex flex-col space-y-6 justify-center items-center py-3">
+      <div className="container w-fit mx-auto flex flex-col space-y-6 justify-center items-center py-3">
         <div className="form-control w-full max-w-xs">
           <label className="label">
             <span className="label-text">Title</span>
@@ -144,13 +145,24 @@ export default function Home() {
             if (e.target.files && e.target.files[0]) {
               setFile(e.target.files[0]);
               if (title === "") {
-                const videoName = e.target.files[0].name
+                const videoName = e.target.files[0].name;
                 const parsedTitle = videoName.split(".").slice(0, -1).join(" ").replace(/_/g, " ");
                 setTitle(parsedTitle);
               }
             }
           }}
         />
+        <label className="label space-x-2 cursor-pointer self-start">
+          <span className="label-text">Unlisted</span>
+          <input
+            type="checkbox"
+            checked={unlisted}
+            onChange={(e) => {
+              setUnlisted(e.target.checked);
+            }}
+            className="checkbox"
+          />
+        </label>
         <button className="btn btn-primary w-full max-w-xs" onClick={uploadVideo}>
           {messageBasedOnState(state)}
         </button>

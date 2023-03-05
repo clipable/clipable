@@ -1,24 +1,24 @@
 "use client";
 
-import { getVideos, Progress, Video, ProgressObject, searchVideos } from "@/shared/api";
-import VideoCard from "@/shared/video-card";
+import { getClips, Progress, Clip, ProgressObject, searchClips } from "@/shared/api";
+import ClipCard from "@/shared/clip-card";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 
 export default function Home() {
-  const [videos, setVideos] = useState<Video[] | null>(null);
+  const [videos, setVideos] = useState<Clip[] | null>(null);
   const [videoProgresses, setVideoProgresses] = useState<ProgressObject>({});
 
   const params = useSearchParams();
 
   useEffect(() => {
     const getVids = async () => {
-      const vids = await getVideos();
+      const vids = await getClips();
       setVideos(vids);
     };
     const getSearchedVids = async () => {
-      const vids = await searchVideos(params.get("search") as string);
+      const vids = await searchClips(params.get("search") as string);
       setVideos(vids);
     };
     params.get("search") ? getSearchedVids() : getVids();
@@ -72,10 +72,10 @@ export default function Home() {
             {videos.map((video) => (
               <li className="m-0" key={video.id}>
                 {video.processing ? (
-                  <VideoCard video={video} progress={videoProgresses[video.id]} />
+                  <ClipCard video={video} progress={videoProgresses[video.id]} />
                 ) : (
                   <Link href={`/clips/${video.id}`}>
-                    <VideoCard video={video} />
+                    <ClipCard video={video} />
                   </Link>
                 )}
               </li>

@@ -37,6 +37,7 @@ type Config struct {
 
 	S3 struct {
 		Address string
+		Secure  bool `default:"false"`
 		Access  string
 		Secret  string
 		Bucket  string

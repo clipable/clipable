@@ -69,6 +69,7 @@ func (r *Routes) FullHandler(handler func(u *models.User, w http.ResponseWriter,
 
 			if err != nil {
 				log.WithError(err).Warnln("Failed to find user, old cookie?")
+				user = nil
 				delete(s.Values, SESSION_KEY_ID)
 				r.store.Save(req, resp, s)
 			}
