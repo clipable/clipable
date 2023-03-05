@@ -97,7 +97,7 @@ func (m *ObjectStoreProvider) HasActiveUploads(ctx context.Context, cid int64) b
 
 type ClipsProvider struct {
 	FindHook       func(ctx context.Context, cid int64) (*models.Clip, error)
-	FindManyHook   func(ctx context.Context, mods ...qm.QueryMod) (models.ClipSlice, error)
+	FindManyHook   func(ctx context.Context, user *models.User, mods ...qm.QueryMod) (models.ClipSlice, error)
 	ExistsHook     func(ctx context.Context, cid int64) (bool, error)
 	DeleteHook     func(ctx context.Context, clip *models.Clip) error
 	SearchManyHook func(ctx context.Context, query string) (models.ClipSlice, error)
@@ -109,8 +109,8 @@ func (m *ClipsProvider) Find(ctx context.Context, cid int64) (*models.Clip, erro
 	return m.FindHook(ctx, cid)
 }
 
-func (m *ClipsProvider) FindMany(ctx context.Context, mods ...qm.QueryMod) (models.ClipSlice, error) {
-	return m.FindManyHook(ctx, mods...)
+func (m *ClipsProvider) FindMany(ctx context.Context, user *models.User, mods ...qm.QueryMod) (models.ClipSlice, error) {
+	return m.FindManyHook(ctx, user, mods...)
 }
 
 func (m *ClipsProvider) Exists(ctx context.Context, cid int64) (bool, error) {
