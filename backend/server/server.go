@@ -74,7 +74,7 @@ func New(cfg *config.Config) (*Server, error) {
 
 	s3, err := minio.New(cfg.S3.Address, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.S3.Access, cfg.S3.Secret, ""),
-		Secure: !cfg.Debug,
+		Secure: cfg.S3.Secure,
 	})
 
 	if err != nil {
