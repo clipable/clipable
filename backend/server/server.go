@@ -14,7 +14,6 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"github.com/golang-migrate/migrate/v4"
 	// Migrate Postgres driver import
@@ -39,7 +38,7 @@ type Server struct {
 
 // New creates a server based on config.Config object
 func New(cfg *config.Config) (*Server, error) {
-	boil.DebugMode = cfg.Debug
+	//boil.DebugMode = cfg.Debug
 	db, err := sql.Open("pgx", fmt.Sprintf("dbname=%s host=%s port=%s user=%s password=%s sslmode=disable", cfg.DB.Name, cfg.DB.Host, cfg.DB.Port, cfg.DB.User, cfg.DB.Password))
 
 	if err != nil {

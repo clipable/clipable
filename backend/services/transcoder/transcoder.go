@@ -153,7 +153,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 
 	cmd := exec.Command("ffmpeg",
 		"-i", rawURL,
-		"-vf", "scale=1280:-1,crop=1280:720", // Scale to 1280 width, then crop image height to 720
+		"-vf", `scale=w='min(1280\,max(iw\,ih*16/9))':h='min(720\,max(ih\,iw*9/16))', crop=1280:720:(iw-1280)/2:(ih-720)/2`, // Scale to 1280 width, then crop image height to 720
 		"-frames:v", "1",
 		fmt.Sprintf("http://127.0.0.1:12786/s3/%d/thumbnail.jpg", clip.ID),
 	)
@@ -200,7 +200,6 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		"-streaming", "0",
 		"-movflags", "+faststart+dash+global_sidx",
 		"-global_sidx", "1",
-		"-http_persistent", "1",
 		"-utc_timing_url", "https://time.akamai.com/?iso",
 		"-progress", fmt.Sprintf("http://127.0.0.1:12786/progress/%d", clip.ID),
 	}

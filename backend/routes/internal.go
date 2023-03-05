@@ -2,6 +2,7 @@ package routes
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -80,7 +81,33 @@ func (r *Routes) UploadObject(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	r.ObjectStore.PutObject(context.Background(), cid, vars["file"], req.Body)
+	body := req.Body
+
+	if strings.Contains(vars["file"], "dash.mpd") {
+		// Reject any mpd files that are dynamic and not static
+		// This unfortunately means that we have to read the entire body into memory
+		// but it's not a huge deal since we're only doing this for the mpd file, which is small
+		manifest, err := io.ReadAll(body)
+
+		if err != nil {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			log.WithError(err).Error("Failed to read manifest")
+			return
+		}
+
+		if strings.Contains(string(manifest), "type=\"dynamic\"") {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		body = io.NopCloser(bytes.NewReader(manifest))
+	}
+
+	if _, err := r.ObjectStore.PutObject(context.Background(), cid, vars["file"], body); err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		log.WithError(err).Error("Failed to put object")
+		return
+	}
 }
 
 func (r *Routes) ReadObject(w http.ResponseWriter, req *http.Request) {
