@@ -3,6 +3,7 @@ package transcoder
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -29,18 +30,17 @@ type FormatInfo struct {
 	Duration string `json:"duration"`
 }
 
-type TagInfo struct {
-	Rotate string `json:"rotate"`
+type SideData struct {
+	Rotation int `json:"rotation"`
 }
 
 type StreamInfo struct {
-	Width      int     `json:"width"`
-	Height     int     `json:"height"`
-	Index      int     `json:"index"`
-	CodecType  string  `json:"codec_type"`
-	RFrameRate string  `json:"r_frame_rate"`
-	Duration   string  `json:"duration"`
-	Tags       TagInfo `json:"tags"`
+	Width        int        `json:"width"`
+	Height       int        `json:"height"`
+	Index        int        `json:"index"`
+	CodecType    string     `json:"codec_type"`
+	RFrameRate   string     `json:"r_frame_rate"`
+	SideDataList []SideData `json:"side_data_list"`
 }
 
 func bitString(bitrate float32) string {
@@ -48,7 +48,7 @@ func bitString(bitrate float32) string {
 }
 
 func GetVideoStats(file string) (width int, height int, fps int, duration time.Duration, audioStreams int, err error) {
-	cmd := exec.Command("ffprobe", "-v", "error", "-show_entries", "format=duration:stream=width,height,r_frame_rate,index,codec_type,duration:stream_tags=rotate", "-sexagesimal", "-of", "json", file)
+	cmd := exec.Command("ffprobe", "-v", "error", "-show_entries", "format=duration:stream=width,height,r_frame_rate,index,codec_type:stream_side_data=rotation", "-sexagesimal", "-of", "json", file)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return 0, 0, 0, 0, 0, err
@@ -83,8 +83,12 @@ func GetVideoStats(file string) (width int, height int, fps int, duration time.D
 	}
 
 	// If the video is rotated 90 or 270 degrees swap the width and height
-	if videoStream.Tags.Rotate == "90" || videoStream.Tags.Rotate == "270" {
-		videoStream.Width, videoStream.Height = videoStream.Height, videoStream.Width
+	if len(videoStream.SideDataList) > 0 {
+		rotation := math.Abs(float64(videoStream.SideDataList[0].Rotation))
+
+		if rotation == 90 || rotation == 270 {
+			videoStream.Width, videoStream.Height = videoStream.Height, videoStream.Width
+		}
 	}
 
 	return videoStream.Width, videoStream.Height, fps, dur, audioStreams, nil

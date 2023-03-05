@@ -153,7 +153,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 
 	cmd := exec.Command("ffmpeg",
 		"-i", rawURL,
-		"-vf", `scale=w='min(1280\,max(iw\,ih*16/9))':h='min(720\,max(ih\,iw*9/16))', crop=1280:720:(iw-1280)/2:(ih-720)/2`, // Scale to 1280 width, then crop image height to 720
+		"-vf", `scale='if(gt(dar,1280/720),720*dar,1280)':'if(gt(dar,1280/720),720,1280/dar)',setsar=1,crop=1280:720`, // Scale to 1280 width, then crop image height to 720
 		"-frames:v", "1",
 		fmt.Sprintf("http://127.0.0.1:12786/s3/%d/thumbnail.jpg", clip.ID),
 	)

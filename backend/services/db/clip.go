@@ -55,13 +55,24 @@ func (c *clips) Delete(ctx context.Context, clip *models.Clip) error {
 	return err
 }
 
-func (c *clips) SearchMany(ctx context.Context, query string) (models.ClipSlice, error) {
-	return models.Clips(
-		qm.Select("*"),
-		qm.Where(`f_concat_ws(' ', title, "description") ILIKE ?`, "%"+query+"%"),
-		qm.OrderBy(`f_concat_ws(' ', title, "description") <-> ?`, "%"+query+"%"),
-		qm.Limit(10),
-		qm.Load(models.ClipRels.Creator),
+func (c *clips) SearchMany(ctx context.Context, user *models.User, query string) (models.ClipSlice, error) {
+	return models.Clips(modelsx.NewBuilder().
+		Add(qm.Select("*"),
+			qm.Where(`f_concat_ws(' ', title, "description") ILIKE ?`, "%"+query+"%"),
+			qm.OrderBy(`f_concat_ws(' ', title, "description") <-> ?`, "%"+query+"%"),
+			qm.Limit(10),
+			qm.Load(models.ClipRels.Creator),
+		).
+		// If there was a user associated with the query, also show them their unlisted clips.
+		// If the user ID is -1, it's the system trying to get all clips and we shouldn't filter anything
+		IfCb(user != nil && user.ID != -1, func() []qm.QueryMod {
+			return []qm.QueryMod{
+				models.ClipWhere.CreatorID.EQ(user.ID),
+				qm.Or(models.ClipColumns.Unlisted+"=?", false),
+			}
+		}).
+		// If there was no user, don't show unlisted clips
+		If(user == nil, models.ClipWhere.Unlisted.EQ(false))...,
 	).All(ctx, c.db)
 }
 
