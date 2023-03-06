@@ -100,6 +100,13 @@ export const register = async (username: string, password: string): Promise<Resp
   return response;
 };
 
+export const registrationAllowed = async (): Promise<boolean> => {
+  const response = await fetch(`${API_URL}/auth/register`, {
+    method: "OPTIONS",
+  });
+  return response.ok;
+};
+
 export const login = async (username: string, password: string): Promise<boolean> => {
   const response = await fetch(`${API_URL}/auth/login`, {
     method: "POST",

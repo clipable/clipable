@@ -1,8 +1,8 @@
 "use client";
 
-import { FormEvent, useContext, useState } from "react";
+import { FormEvent, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { login } from "@/shared/api";
+import { login, registrationAllowed } from "@/shared/api";
 import { UserContext } from "@/context/user-context";
 
 export default function Home() {
@@ -11,6 +11,15 @@ export default function Home() {
 
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [isRegistrationAllowed, setRegistrationAllowed] = useState<boolean>(false);
+
+  useEffect(() => {
+    const getRegistrationAllowed = async () => {
+      setRegistrationAllowed(await registrationAllowed());
+    };
+    getRegistrationAllowed();
+  }, []);
+
 
   const loginUser = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -55,15 +64,17 @@ export default function Home() {
           Login
         </button>
 
-        <button
-          className="btn btn-outline w-full max-w-xs"
-          type="button"
-          onClick={() => {
-            router.push("/register");
-          }}
-        >
-          Register
-        </button>
+        {isRegistrationAllowed && (
+          <button
+            className="btn btn-outline w-full max-w-xs"
+            type="button"
+            onClick={() => {
+              router.push("/register");
+            }}
+          >
+            Register
+          </button>
+        )}
       </div>
     </main>
   );

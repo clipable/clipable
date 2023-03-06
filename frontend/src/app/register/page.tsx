@@ -1,8 +1,8 @@
 "use client";
 
-import { FormEvent, useContext, useState } from "react";
+import { FormEvent, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { register } from "@/shared/api";
+import { register, registrationAllowed } from "@/shared/api";
 import { UserContext } from "@/context/user-context";
 import Alert from "@/shared/alert";
 
@@ -20,6 +20,14 @@ export default function Home() {
   const [state, setState] = useState<State>(State.Idle);
   const [username, setUsername] = useState<string | null>(null);
   const [password, setPassword] = useState<string | null>(null);
+  const [isRegistrationAllowed, setRegistrationAllowed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const getRegistrationAllowed = async () => {
+      setRegistrationAllowed(await registrationAllowed());
+    };
+    getRegistrationAllowed();
+  }, []);
 
   const registerUser = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -54,6 +62,16 @@ export default function Home() {
         return "";
     }
   };
+
+  if (isRegistrationAllowed != null && !isRegistrationAllowed) {
+    return (
+      <main className="h-screen">
+        <div className="container mx-auto flex flex-col space-y-6 justify-center items-center py-3">
+          <Alert type="error" message="Registration is disabled for this site" />
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="h-screen">
