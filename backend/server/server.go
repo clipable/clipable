@@ -49,6 +49,10 @@ func New(cfg *config.Config) (*Server, error) {
 		return nil, err
 	}
 
+	log.SetFormatter(&log.TextFormatter{
+		DisableQuote: true,
+	})
+
 	m, err := migrate.New(
 		"file://migrations",
 		fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable&x-multi-statement=true", cfg.DB.User, cfg.DB.Password, cfg.DB.Host, cfg.DB.Port, cfg.DB.Name),

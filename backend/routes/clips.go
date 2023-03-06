@@ -130,30 +130,19 @@ func (r *Routes) GetClip(user *models.User, req *http.Request) (int, []byte, err
 func (r *Routes) GetProgress(user *models.User, req *http.Request) (int, []byte, error) {
 	queryparams := query(req)
 
-	clip, err := r.Clips.FindMany(req.Context(), user, models.ClipWhere.ID.IN(queryparams.CID))
-
-	if err != nil {
-		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to find many clips")
-	}
-
-	if len(clip) == 0 {
-		return http.StatusNotFound, nil, nil
-	}
-
 	prog := &modelsx.Progress{
 		Clips: make(map[modelsx.HashID]int),
 	}
 
-	for _, c := range clip {
-		if c.Processing {
-			progress, ok := r.Transcoder.GetProgress(c.ID)
+	for _, id := range queryparams.CID {
+		progress, ok := r.Transcoder.GetProgress(id)
 
-			if !ok {
-				continue
-			}
-
-			prog.Clips[modelsx.HashID(c.ID)] = progress
+		if !ok {
+			continue
 		}
+
+		prog.Clips[modelsx.HashID(id)] = progress
+
 	}
 
 	if len(prog.Clips) == 0 {
@@ -258,10 +247,6 @@ func (r *Routes) DeleteClip(user *models.User, req *http.Request) (int, []byte, 
 	// Delete the clip
 	if err := r.Clips.Delete(req.Context(), clip); err != nil {
 		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to delete clip")
-	}
-
-	if err := r.ObjectStore.DeleteObjects(req.Context(), clip.ID); err != nil {
-		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to delete clip objects")
 	}
 
 	return http.StatusNoContent, nil, nil
