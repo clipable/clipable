@@ -122,8 +122,8 @@ func (t *transcoder) GetProgress(clipID int64) (int, bool) {
 		return 0, false
 	}
 
-	if prog.currentFrame == -1 {
-		return -1, true
+	if prog.currentFrame < 0 {
+		return prog.currentFrame, true
 	}
 
 	// divide current frame by max frames to get progress percentage
@@ -134,6 +134,11 @@ func (t *transcoder) ReportProgress(clipID int64, currentFrame int) {
 	prog, ok := t.progress.Get(clipID)
 
 	if !ok {
+		return
+	}
+
+	if prog.currentFrame == -2 {
+		// If the clip is marked as failed, don't update the progress
 		return
 	}
 
@@ -148,6 +153,25 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 	// https://support.google.com/youtube/answer/1722171?hl=en#zippy=%2Cbitrate
 
 	log.Infoln("Transcoding video", clip.ID)
+	success := false
+
+	defer func() {
+		// If the clip is not marked as successful when we return, mark it as failed (-2) and then remove it from the progress map after 1 minute
+		// This should give ample time for the client to call progress and notice the failure
+		if !success {
+			t.ReportProgress(clip.ID, -2)
+
+			if err := t.Clips.Delete(ctx, clip); err != nil {
+				log.WithError(err).Error("Failed to delete clip")
+			}
+
+			go func() {
+				// Sleep for 5 minutes before marking the clip as failed
+				time.Sleep(1 * time.Minute)
+				t.progress.Remove(clip.ID)
+			}()
+		}
+	}()
 
 	rawURL := fmt.Sprintf("http://127.0.0.1:12786/s3/%d/raw", clip.ID)
 
@@ -158,11 +182,13 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		fmt.Sprintf("http://127.0.0.1:12786/s3/%d/thumbnail.jpg", clip.ID),
 	)
 
-	_, err := cmd.CombinedOutput()
+	output, err := cmd.CombinedOutput()
 
 	if err != nil {
 		log.WithError(err).
-			Error(cmd.String())
+			WithField("output", string(output)).
+			WithField("command", cmd.String()).
+			Error("Failed to create thumbnail for video, we'd appreciate it if you'd report this issue to us on GitHub with a sample clip that causes the issue: https://github.com/clipable/clipable/issues/new")
 		return
 	}
 
@@ -188,7 +214,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		"-seg_duration", "2",
 		"-sc_threshold", "0",
 		"-c:v", "libx264",
-		"-pix_fmt", "yuv420p", // TODO: overwrite pix_fmt parameters
+		"-pix_fmt", "yuv420p",
 		"-c:a", "aac",
 		"-b:a", "128k",
 		"-ac", "1",
@@ -241,12 +267,13 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 
 	prog.maxFrames = int(math.Round(duration.Seconds() * 30))
 
-	output, err := cmd.CombinedOutput()
+	output, err = cmd.CombinedOutput()
 
 	if err != nil {
 		log.WithError(err).
 			WithField("output", string(output)).
-			Error(cmd.String())
+			WithField("args", ffmpegArgs).
+			Error("Failed to transcode video, we'd appreciate it if you'd report this issue to us on GitHub with a sample clip that causes the issue: https://github.com/clipable/clipable/issues/new")
 		return
 	}
 
@@ -272,4 +299,6 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 	}
 
 	t.progress.Remove(clip.ID)
+
+	success = true
 }

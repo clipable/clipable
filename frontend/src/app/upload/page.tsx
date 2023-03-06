@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 
 enum State {
   Idle,
-  Error,
+  ErrorUpload,
+  ErrorEncoding,
   Success,
   Uploading,
   Queued,
@@ -49,7 +50,7 @@ export default function Home() {
           setState(State.Queued);
           setClipId(JSON.parse(req.responseText).id);
         } else {
-          setState(State.Error);
+          setState(State.ErrorUpload);
         }
       }
     };
@@ -60,37 +61,48 @@ export default function Home() {
   // A UseEffect hook that loops every 1 second to check progress
   useEffect(() => {
     if (state == State.Queued) {
+      const checkProgress = async () => {
+        const resp = await fetch(`/api/clips/progress?cid=${clipId}`);
+
+        if (resp.status === 200) {
+          const json = await resp.json();
+          let progress = json.clips[clipId];
+
+          // If progress is 0, set it to 1 so the progress bar at least shows something
+          progress = progress === 0 ? 1 : progress;
+
+          // If progress is greater than 0, update the progress bar
+          if (progress > 0) {
+            setProgress(progress);
+          }
+
+          // If we were previously queued, but now we have a non-negative progress, we are now encoding
+          if (state == State.Queued && progress >= 0) {
+            setState(State.Encoding);
+          }
+
+          // If the process is -2 the clip failed to encode
+          if (progress === -2) {
+            setState(State.ErrorEncoding);
+            clearInterval(interval);
+          }
+        } else if (resp.status == 204) {
+          setState(State.Success);
+          // redirect to clip
+          router.push(`/clips/${clipId}`);
+        }
+      };
       const interval = setInterval(checkProgress, 1000);
       return () => clearInterval(interval);
     }
   }, [clipId]);
 
-  const checkProgress = async () => {
-    const resp = await fetch(`/api/clips/progress?cid=${clipId}`);
-
-    if (resp.status === 200) {
-      const json = await resp.json();
-      let progress = json.clips[clipId];
-
-      progress = progress === 0 ? 1 : progress;
-
-      if (progress > 0) {
-        setProgress(progress);
-      }
-      if (state == State.Queued && progress != -1) {
-        setState(State.Encoding);
-      }
-    } else if (resp.status == 204) {
-      setState(State.Success);
-      // redirect to clip
-      router.push(`/clips/${clipId}`);
-    }
-  };
-
   const messageBasedOnState = (state: State) => {
     switch (state) {
-      case State.Error:
+      case State.ErrorUpload:
         return "Error uploading video";
+      case State.ErrorEncoding:
+        return "Error encoding video";
       case State.Success:
         return "Video uploaded successfully";
       case State.Uploading:

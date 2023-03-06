@@ -8,6 +8,7 @@ import (
 	"webserver/modelsx"
 	"webserver/services"
 
+	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
@@ -52,6 +53,12 @@ func (c *clips) Exists(ctx context.Context, cid int64) (bool, error) {
 
 func (c *clips) Delete(ctx context.Context, clip *models.Clip) error {
 	_, err := clip.Delete(ctx, c.db)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete clip")
+	}
+	if err := c.os.DeleteObjects(ctx, clip.ID); err != nil {
+		return errors.Wrap(err, "failed to delete clip objects")
+	}
 	return err
 }
 
