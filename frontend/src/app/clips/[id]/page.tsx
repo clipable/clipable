@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteCip, getClip, Clip } from "@/shared/api";
+import { deleteCip, getClip, Clip, updateClipDetails } from "@/shared/api";
 import { formatDate } from "@/shared/date-formatter";
 import { formatViewsCount } from "@/shared/views-formatter";
 import dynamic from "next/dynamic";
@@ -8,9 +8,10 @@ import { useState, useEffect, useContext } from "react";
 import "@mkhuda/react-shaka-player/dist/ui.css";
 import Link from "next/link";
 import "./player.scss";
-import trashcan from "../../../../public/trashcan.svg";
 import { UserContext } from "@/context/user-context";
 import { useRouter } from "next/navigation";
+import Modal from "@/shared/modal";
+import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/outline";
 
 const ReactShakaPlayer = dynamic(() => import("@mkhuda/react-shaka-player").then((module) => module.ReactShakaPlayer), {
   ssr: false,
@@ -21,6 +22,11 @@ export default function Page({ params }: { params: { id: string } }) {
   const userContext = useContext(UserContext);
   const router = useRouter();
   let [mainPlayer, setMainPlayer] = useState({});
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [videoTitle, setVideoTitle] = useState("");
+  const [videoDescription, setVideoDescription] = useState("");
+  const [videoUnlisted, setVideoUnlisted] = useState(false);
 
   useEffect(() => {
     const { player, videoElement } = mainPlayer as { player: any; videoElement: HTMLVideoElement };
@@ -41,11 +47,16 @@ export default function Page({ params }: { params: { id: string } }) {
     };
   }, [mainPlayer]);
 
+  const fetchVideo = async () => {
+    const vid = await getClip(params.id);
+    if (!vid) return;
+    setVideoDetails(vid);
+    setVideoTitle(vid.title);
+    setVideoDescription(vid.description || "");
+    setVideoUnlisted(vid.unlisted);
+  };
+
   useEffect(() => {
-    const fetchVideo = async () => {
-      const vid = await getClip(params.id);
-      setVideoDetails(vid);
-    };
     fetchVideo();
   }, [params.id]);
 
@@ -81,18 +92,97 @@ export default function Page({ params }: { params: { id: string } }) {
             {videoDetails.creator.id === userContext.user?.id && (
               <>
                 <p className="text-sm">•</p>
-                <img
-                  src={trashcan.src}
-                  className="w-4 cursor-pointer"
-                  alt="delete clip"
-                  title="Delete Clip"
+                <PencilSquareIcon className="w-6 cursor-pointer text-gray-400" onClick={() => setEditModalOpen(true)} />
+                <p className="text-sm">•</p>
+                <TrashIcon
+                  className="w-6 text-red-500 cursor-pointer"
                   onClick={async () => {
-                    await deleteCip(videoDetails.id);
-                    router.push("/");
+                    setDeleteModalOpen(true);
                   }}
                 />
               </>
             )}
+            <Modal
+              open={deleteModalOpen}
+              onClose={() => setDeleteModalOpen(false)}
+              title="Delete Clip"
+              content={
+                <>
+                  <p className="text-gray-300">Are you sure you want to delete this clip?</p>
+                  <p className="text-gray-400 text-md">This action cannot be undone.</p>
+                  <div className="flex flex-row space-x-2 w-full justify-end mt-4">
+                    <button className="btn btn-outline btn-sm" onClick={() => setDeleteModalOpen(false)}>
+                      Cancel
+                    </button>
+                    <button
+                      className="btn btn-error btn-sm"
+                      onClick={async () => {
+                        await deleteCip(videoDetails.id);
+                        router.push("/");
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </>
+              }
+            />
+            <Modal
+              open={editModalOpen}
+              onClose={() => setEditModalOpen(false)}
+              title="Edit Clip"
+              content={
+                <>
+                  <div className="flex flex-col space-y-2">
+                    <div className="flex flex-col space-y-2 my-2">
+                      <input
+                        type="text"
+                        className="input"
+                        placeholder="Title"
+                        value={videoTitle}
+                        onChange={(e) => setVideoTitle(e.target.value)}
+                      />
+                      <textarea
+                        className="input"
+                        placeholder="Description"
+                        value={videoDescription}
+                        onChange={(e) => setVideoDescription(e.target.value)}
+                      />
+                      <label className="label space-x-2 cursor-pointer self-start">
+                        <span className="label-text">Unlisted</span>
+                        <input
+                          type="checkbox"
+                          checked={videoUnlisted}
+                          onChange={(e) => {
+                            setVideoUnlisted(e.target.checked);
+                          }}
+                          className="checkbox"
+                        />
+                      </label>
+                    </div>
+                    <div className="flex flex-row space-x-2 w-full justify-end mt-4">
+                      <button className="btn btn-outline btn-sm" onClick={() => setEditModalOpen(false)}>
+                        Cancel
+                      </button>
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={async () => {
+                          await updateClipDetails(videoDetails.id, {
+                            title: videoTitle,
+                            description: videoDescription,
+                            unlisted: videoUnlisted,
+                          });
+                          setEditModalOpen(false);
+                          fetchVideo();
+                        }}
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                </>
+              }
+            />
           </div>
         </div>
       )}

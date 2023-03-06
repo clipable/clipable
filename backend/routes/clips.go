@@ -212,6 +212,8 @@ func (r *Routes) UpdateClip(user *models.User, req *http.Request) (int, []byte, 
 
 	model := clipx.ToModel()
 
+	model.ID = clip.ID
+
 	// Update the clip
 
 	if err := r.Clips.Update(req.Context(), model, boil.Whitelist(clipx.GetUpdateWhitelist()...)); err != nil {

@@ -62,7 +62,6 @@ export const deleteCip = async (videoId: string): Promise<boolean> => {
   return response.ok;
 };
 
-
 export const getUsersClips = async (userId: string): Promise<Clip[]> => {
   const response = await fetch(`${API_URL}/users/${userId}/clips`, {
     credentials: "include",
@@ -134,4 +133,27 @@ export const searchClips = async (query: string): Promise<Clip[]> => {
     return [];
   }
   return response.json();
-}
+};
+
+export const updateClipDetails = async (
+  videoId: string,
+  {
+    title,
+    description,
+    unlisted,
+  }: {
+    title: string;
+    description: string;
+    unlisted: boolean;
+  }
+): Promise<boolean> => {
+  const response = await fetch(`${API_URL}/clips/${videoId}`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ title, description, unlisted }),
+  });
+  return response.ok;
+};

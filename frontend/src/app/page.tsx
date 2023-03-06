@@ -4,7 +4,7 @@ import { getClips, Progress, Clip, ProgressObject, searchClips } from "@/shared/
 import ClipCard from "@/shared/clip-card";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function Home() {
   const [videos, setVideos] = useState<Clip[] | null>(null);
@@ -31,7 +31,7 @@ export default function Home() {
       if (!videos.length) {
         clearInterval(interval);
         return;
-      };
+      }
 
       // Get the ids of all videos that are still processing
       const inProgressVideoIds = videos
@@ -49,7 +49,7 @@ export default function Home() {
 
       // If the request fails, we don't want to stop the interval
       if (!resp.ok) {
-        return
+        return;
       }
 
       // If the server returns 204, there are no videos in progress anymore
@@ -64,14 +64,13 @@ export default function Home() {
         return;
       }
 
-
       const { clips } = (await resp.json()) as Progress;
       setVideos(
-        videos.
+        videos
           // If the clip progress is -2, it failed to encode, so we don't want to show it
-          filter((video) => clips[video.id] !== -2).
+          .filter((video) => clips[video.id] !== -2)
           // If the clip is still processing, but we don't have a progress value for it, set it to be done processing
-          map((video) => ({ ...video, processing: video.processing && !!clips[video.id] }))
+          .map((video) => ({ ...video, processing: video.processing && !!clips[video.id] }))
       );
       setVideoProgresses(clips);
     };
