@@ -57,3 +57,7 @@ Getting started is easy with Docker!
  You can start by copying our [docker-compose.yml](https://github.com/clipable/clipable/blob/master/docker-compose.yml) and simply run `docker compose up -d`. The site will then be accessible at http://localhost/. If you plan on accessing it from a seperate URL, it's important to set the `COOKIE_DOMAIN` to that domain. You can view documentation about all of our environment variables [here.](https://github.com/clipable/clipable/wiki/Environment-Variables)
 <h2><img height="20" src="./.assets/icon.png">&nbsp;&nbsp;Contributing</h2>
  TODO
+
+<h2><img height="20" src="./.assets/icon.png">&nbsp;&nbsp;License</h2>  
+
+Clipable is licensed under the [BSL 1.1 license](https://github.com/clipable/clipable/blob/master/LICENSE), converting to the open-source GNU General Public License v2.0 or later after 4 years. If you'd like to learn more, you can do so [here](https://mariadb.com/bsl-faq-adopting/).
