@@ -51,7 +51,7 @@ func GetVideoStats(file string) (width int, height int, fps int, duration time.D
 	cmd := exec.Command("ffprobe", "-v", "error", "-show_entries", "format=duration:stream=width,height,r_frame_rate,index,codec_type:stream_side_data=rotation", "-sexagesimal", "-of", "json", file)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return 0, 0, 0, 0, 0, err
+		return 0, 0, 0, 0, 0, errors.Wrap(err, fmt.Sprintf("ffprobe failed: %s", out))
 	}
 
 	var info VideoInfo

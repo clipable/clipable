@@ -78,6 +78,7 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 	// AUTH ENDPOINTS
 	endpoint("/auth/login", r.ResponseHandler(r.Login), http.MethodPost)
 	endpoint("/auth/register", r.ResponseHandler(r.Register), http.MethodPost)
+	endpoint("/auth/register", r.ResponseHandler(r.AllowRegistration), http.MethodOptions)
 	endpoint("/auth/logout", r.ResponseHandler(r.Logout), http.MethodPost)
 
 	// USER ENDPOINTS

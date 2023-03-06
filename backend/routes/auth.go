@@ -15,6 +15,14 @@ const SESSION_KEY_UID = "uid"
 const SESSION_KEY_OAUTH_STATE = "oauth-state"
 const SESSION_KEY_ID = "id"
 
+func (r *Routes) AllowRegistration(resp http.ResponseWriter, req *http.Request) (int, []byte, error) {
+	if !r.cfg.AllowRegistration {
+		return http.StatusForbidden, nil, nil
+	}
+
+	return http.StatusOK, nil, nil
+}
+
 func (r *Routes) Login(resp http.ResponseWriter, req *http.Request) (int, []byte, error) {
 	session, _ := r.store.Get(req, SESSION_NAME)
 
@@ -59,6 +67,9 @@ func (r *Routes) Logout(resp http.ResponseWriter, req *http.Request) (int, []byt
 }
 
 func (r *Routes) Register(resp http.ResponseWriter, req *http.Request) (int, []byte, error) {
+	if !r.cfg.AllowRegistration {
+		return http.StatusForbidden, []byte("Registration is disabled"), nil
+	}
 
 	usr, err := modelsx.ParseUser(req, modelsx.UserValidateRegister)
 
