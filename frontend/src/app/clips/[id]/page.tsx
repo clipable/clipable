@@ -52,17 +52,17 @@ export default function Page({ params }: { params: { id: string } }) {
   return (
     <main className={`mt-2`}>
       <div className="w-fit mx-auto ">
-      <ReactShakaPlayer onLoad={(player) => setMainPlayer(player)} autoPlay />
+        <ReactShakaPlayer onLoad={(player) => setMainPlayer(player)} autoPlay />
         {videoDetails && (
           <div className="w-full bg-base-300 mx-0 flex-grow flex flex-row">
             <div className="w-2/4 flex-grow overflow-hidden text-ellipsis whitespace-nowrap">
               <h1 className="indent-1.5 text-[15px] font-semibold overflow-hidden whitespace-nowrap text-ellipsis">
                 {videoDetails.title}
+                {videoDetails.unlisted && <div className="indent-0 badge badge-outline">unlisted</div>}
               </h1>
               <p className="whitespace-pre-line truncate indent-1.5 text-[10px] text-gray-300">
-                {videoDetails.unlisted && <div className="badge badge-outline">unlisted</div>}
-                {" " + videoDetails.description?.slice(0, 40)+ "..."}
-                </p>
+                {" " + videoDetails.description?.slice(0, 40) + "..."}
+              </p>
             </div>
             <div className=""></div>
             <div className="w-1/4 flex-col items-center text-gray-400 pr-3">
