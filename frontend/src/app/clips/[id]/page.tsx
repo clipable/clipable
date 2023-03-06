@@ -51,36 +51,35 @@ export default function Page({ params }: { params: { id: string } }) {
 
   return (
     <main className={`mt-2`}>
-      <div className="w-fit mx-auto">
-        <ReactShakaPlayer onLoad={(player) => setMainPlayer(player)} autoPlay />
-      </div>
-      {videoDetails && (
-        <div className="p-4 mx-auto flex flex-row container">
-          <div className="w-full  overflow-hidden text-ellipsis whitespace-nowrap">
-            <div className="flex flex-row space-x-4 items-center">
-              <h1 className="text-2xl font-bold max-w-[90%] overflow-hidden whitespace-nowrap text-ellipsis">
+      <div className="w-fit mx-auto ">
+      <ReactShakaPlayer onLoad={(player) => setMainPlayer(player)} autoPlay />
+        {videoDetails && (
+          <div className="w-full bg-base-300 mx-0 flex-grow flex flex-row">
+            <div className="w-2/4 flex-grow overflow-hidden text-ellipsis whitespace-nowrap">
+              <h1 className="indent-1.5 text-[15px] font-semibold overflow-hidden whitespace-nowrap text-ellipsis">
                 {videoDetails.title}
               </h1>
+              <p className="whitespace-pre-line truncate indent-1.5 text-[10px] text-gray-300">
+                {videoDetails.unlisted && <div className="badge badge-outline">unlisted</div>}
+                {" " + videoDetails.description?.slice(0, 40)+ "..."}
+                </p>
             </div>
-            {videoDetails.unlisted && <div className="badge badge-outline">unlisted</div>}
-            <p className="text-gray-300">{videoDetails.description}</p>
-          </div>
-          <div className="flex-grow"></div>
-          <div className="flex flex-row self-start space-x-2 items-center text-gray-400 text-xl">
-            <p className="flex flex-row">
-              <p className="hover:text-gray-300">
-                <Link href={`/users/${videoDetails.creator.id}`}>{videoDetails.creator.username}</Link>
+            <div className=""></div>
+            <div className="w-1/4 flex-col items-center text-gray-400 pr-3">
+              <p className="flex">
+                <p className="flex-grow"></p>
+                <p className="hover:text-gray-300 text-[12px]">
+                  <Link href={`/users/${videoDetails.creator.id}`}>{videoDetails.creator.username}</Link>
+                </p>
               </p>
-            </p>
-            <p className="text-sm">•</p>
-            <p className="whitespace-nowrap">
-              {formatViewsCount(videoDetails.views)} view{videoDetails.views === 1 ? "" : "s"}
-            </p>
-            <p className="text-sm">•</p>
-            <p className="whitespace-nowrap">{formatDate(videoDetails.created_at)}</p>
+
+              <p className="whitespace-nowrap text-[8px] text-right">
+                {formatViewsCount(videoDetails.views)} view{videoDetails.views === 1 ? "" : "s - "}
+                {formatDate(videoDetails.created_at)}
+              </p>
+            </div>
             {videoDetails.creator.id === userContext.user?.id && (
               <>
-                <p className="text-sm">•</p>
                 <img
                   src={trashcan.src}
                   className="w-4 cursor-pointer"
@@ -94,8 +93,8 @@ export default function Page({ params }: { params: { id: string } }) {
               </>
             )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </main>
   );
 }
