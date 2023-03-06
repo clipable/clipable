@@ -138,11 +138,10 @@ export default function Home() {
           <label className="label">
             <span className="label-text">Description</span>
           </label>
-          <input
-            type="text"
+          <textarea
             required
             placeholder="Description"
-            className="input input-bordered w-full max-w-xs"
+            className="textarea textarea-bordered w-full max-w-xs"
             value={description}
             onChange={(e) => {
               setDescription(e.target.value);
