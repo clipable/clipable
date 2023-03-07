@@ -28,6 +28,8 @@
 
 Clipable is a self-hosted video sharing platform that provides an easy and efficient way for individuals and organizations to host, share, and manage their video content. Inspired by popular platforms like Streamable and YouTube, Clipable offers a simple and intuitive user interface that makes it easy for anyone to upload, share, and watch videos with ease. With a focus on privacy and security, Clipable provides an alternative for those looking for a more controlled and self-reliant video hosting solution. Whether you're a content creator, a business owner, or just someone looking to share videos with friends and family, Clipable provides all the features you need to manage your video content with confidence.
 
+### Live, view-only demo [here](https://clipable.net/).  
+
 View the [features](https://github.com/clipable/clipable/blob/master/README.md#features), the latest [releases](https://github.com/clipable/clipable/releases), the product [roadmap](https://github.com/clipable/clipable/milestones), and [documentation](https://github.com/clipable/clipable/wiki).
 
 <img src="./.assets/preview.png">
