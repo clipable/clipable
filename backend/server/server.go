@@ -2,6 +2,7 @@
 package server
 
 import (
+	"crypto/sha256"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/pbkdf2"
 
 	"github.com/golang-migrate/migrate/v4"
 	// Migrate Postgres driver import
@@ -71,7 +73,9 @@ func New(cfg *config.Config) (*Server, error) {
 
 	modelsx.SetHashEncoder(cfg.DB.IDHashKey)
 
-	cookieStore := sessions.NewCookieStore([]byte(cfg.Cookie.Key), []byte(cfg.Cookie.Key))
+	keyHash := pbkdf2.Key([]byte(cfg.Cookie.Key), nil, 600_000, 32, sha256.New)
+
+	cookieStore := sessions.NewCookieStore(keyHash, keyHash)
 	cookieStore.Options.SameSite = http.SameSiteStrictMode
 	cookieStore.Options.Domain = cfg.Cookie.Domain
 	cookieStore.MaxAge(int((30 * (24 * time.Hour)).Seconds())) // 30 Days
