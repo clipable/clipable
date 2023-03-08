@@ -51,7 +51,9 @@ func (r *Routes) Login(resp http.ResponseWriter, req *http.Request) (int, []byte
 	}
 
 	session.Values[SESSION_KEY_ID] = user.ID
-	session.Save(req, resp)
+	if err := session.Save(req, resp); err != nil {
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "Failed to save session")
+	}
 
 	return modelsx.UserFromModel(user).Marshal()
 }
@@ -60,7 +62,11 @@ func (r *Routes) Logout(resp http.ResponseWriter, req *http.Request) (int, []byt
 	session, _ := r.store.Get(req, SESSION_NAME)
 
 	session.Options.MaxAge = -1
-	session.Save(req, resp)
+
+	if err := session.Save(req, resp); err != nil {
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "Failed to save session")
+	}
+
 	resp.Header().Set("Clear-Site-Data", `"cookies"`)
 
 	return http.StatusOK, nil, nil
@@ -104,7 +110,9 @@ func (r *Routes) Register(resp http.ResponseWriter, req *http.Request) (int, []b
 	session, _ := r.store.Get(req, SESSION_NAME)
 
 	session.Values[SESSION_KEY_ID] = model.ID
-	session.Save(req, resp)
+	if err := session.Save(req, resp); err != nil {
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "Failed to save session")
+	}
 
 	return modelsx.UserFromModel(model).Marshal()
 }
