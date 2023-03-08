@@ -63,7 +63,10 @@ export default function Page({ params }: { params: { id: string } }) {
   return (
     <main className={`mt-2`}>
       <div className="w-fit mx-auto">
-        <ReactShakaPlayer onLoad={(player) => setMainPlayer(player)} autoPlay />
+        <ReactShakaPlayer onLoad={(player) => setMainPlayer(player)} uiConfig={{
+          'overflowMenuButtons': ['picture_in_picture', 'playback_rate', 'quality'],
+          'controlPanelElements': ['play_pause', 'current_time', 'time_and_duration', 'mute', 'volume', 'spacer', 'overflow_menu', 'fullscreen',]
+        }} autoPlay />
       </div>
       {videoDetails && (
         <div className="p-4 mx-auto flex flex-row container">
