@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSpring, animated } from "react-spring";
 
 enum State {
   Idle,
@@ -23,6 +24,11 @@ export default function Home() {
   const [file, setFile] = useState<File>();
   const [clipId, setClipId] = useState<string>("");
   const [unlisted, setUnlisted] = useState<boolean>(false);
+  const [oldVal, setOldVal] = useState<number>(0);
+  const barvalue = useSpring({
+    config: { duration: 1000 },
+    percent: progress,
+  });
 
   const uploadVideo = async () => {
     if (!file || !title) return;
@@ -96,6 +102,12 @@ export default function Home() {
       return () => clearInterval(interval);
     }
   }, [clipId]);
+
+  useEffect(() => {
+    if (progress) {
+      setOldVal(progress);
+    }
+  }, [progress]);
 
   const messageBasedOnState = (state: State) => {
     switch (state) {
@@ -179,6 +191,15 @@ export default function Home() {
         </button>
         {state !== State.Idle && (
           <progress className="progress progress-accent w-full max-w-xs" value={progress} max="100" />
+        )}
+      </div>
+      <div className="flex flex-col space-y-6 justify-center items-center py-3">
+      {state !== State.Idle && (
+          <animated.progress
+            className="progress progress-accent w-full max-w-xs justify-center items-center"
+            value={barvalue.percent}
+            max="100"
+          ></animated.progress>
         )}
       </div>
     </main>
