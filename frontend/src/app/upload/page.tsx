@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSpring, animated } from "react-spring";
 
 enum State {
   Idle,
-  ErrorUpload,
-  ErrorEncoding,
+  Error,
   Success,
   Uploading,
   Queued,
@@ -22,7 +22,11 @@ export default function Home() {
   const [description, setDescription] = useState<string>("");
   const [file, setFile] = useState<File>();
   const [clipId, setClipId] = useState<string>("");
-  const [unlisted, setUnlisted] = useState<boolean>(false);
+  const [oldVal, setOldVal] = useState<number>(0);
+  const barvalue = useSpring({
+    config: { duration: 1000 },
+    percent: progress,
+  });
 
   const uploadVideo = async () => {
     if (!file || !title) return;
@@ -31,7 +35,7 @@ export default function Home() {
 
     const multiPartForm = new FormData();
 
-    multiPartForm.append("json", JSON.stringify({ title, description, unlisted }));
+    multiPartForm.append("json", JSON.stringify({ title, description }));
     multiPartForm.append("video", file);
 
     const req = new XMLHttpRequest();
@@ -50,7 +54,7 @@ export default function Home() {
           setState(State.Queued);
           setClipId(JSON.parse(req.responseText).id);
         } else {
-          setState(State.ErrorUpload);
+          setState(State.Error);
         }
       }
     };
@@ -61,48 +65,43 @@ export default function Home() {
   // A UseEffect hook that loops every 1 second to check progress
   useEffect(() => {
     if (state == State.Queued) {
-      const checkProgress = async () => {
-        const resp = await fetch(`/api/clips/progress?cid=${clipId}`);
-
-        if (resp.status === 200) {
-          const json = await resp.json();
-          let progress = json.clips[clipId];
-
-          // If progress is 0, set it to 1 so the progress bar at least shows something
-          progress = progress === 0 ? 1 : progress;
-
-          // If progress is greater than 0, update the progress bar
-          if (progress > 0) {
-            setProgress(progress);
-          }
-
-          // If we were previously queued, but now we have a non-negative progress, we are now encoding
-          if (state == State.Queued && progress >= 0) {
-            setState(State.Encoding);
-          }
-
-          // If the process is -2 the clip failed to encode
-          if (progress === -2) {
-            setState(State.ErrorEncoding);
-            clearInterval(interval);
-          }
-        } else if (resp.status == 204) {
-          setState(State.Success);
-          // redirect to clip
-          router.push(`/clips/${clipId}`);
-        }
-      };
       const interval = setInterval(checkProgress, 1000);
       return () => clearInterval(interval);
     }
   }, [clipId]);
 
+  useEffect(() => {
+    if (progress) {
+      setOldVal(progress);
+    }
+  }, [progress]);
+
+  const checkProgress = async () => {
+    const resp = await fetch(`/api/clips/progress?cid=${clipId}`);
+
+    if (resp.status === 200) {
+      const json = await resp.json();
+      let progress = json.clips[clipId];
+
+      progress = progress === 0 ? 1 : progress;
+
+      if (progress > 0) {
+        setProgress(progress);
+      }
+      if (state == State.Queued && progress != -1) {
+        setState(State.Encoding);
+      }
+    } else if (resp.status == 204) {
+      setState(State.Success);
+      //redirect to clip
+      router.push(`/clips/${clipId}`);
+    }
+  };
+
   const messageBasedOnState = (state: State) => {
     switch (state) {
-      case State.ErrorUpload:
+      case State.Error:
         return "Error uploading video";
-      case State.ErrorEncoding:
-        return "Error encoding video";
       case State.Success:
         return "Video uploaded successfully";
       case State.Uploading:
@@ -120,7 +119,7 @@ export default function Home() {
 
   return (
     <main className="h-full">
-      <div className="container w-fit mx-auto flex flex-col space-y-6 justify-center items-center py-3">
+      <div className="container mx-auto flex flex-col space-y-6 justify-center items-center py-3">
         <div className="form-control w-full max-w-xs">
           <label className="label">
             <span className="label-text">Title</span>
@@ -138,10 +137,11 @@ export default function Home() {
           <label className="label">
             <span className="label-text">Description</span>
           </label>
-          <textarea
+          <input
+            type="text"
             required
             placeholder="Description"
-            className="textarea textarea-bordered w-full max-w-xs"
+            className="input input-bordered w-full max-w-xs"
             value={description}
             onChange={(e) => {
               setDescription(e.target.value);
@@ -163,22 +163,18 @@ export default function Home() {
             }
           }}
         />
-        <label className="label space-x-2 cursor-pointer self-start">
-          <span className="label-text">Unlisted</span>
-          <input
-            type="checkbox"
-            checked={unlisted}
-            onChange={(e) => {
-              setUnlisted(e.target.checked);
-            }}
-            className="checkbox"
-          />
-        </label>
         <button className="btn btn-primary w-full max-w-xs" onClick={uploadVideo}>
           {messageBasedOnState(state)}
         </button>
+      </div>
+      <div className="flex flex-col space-y-6 justify-center items-center py-3">
         {state !== State.Idle && (
-          <progress className="progress progress-accent w-full max-w-xs" value={progress} max="100" />
+          //Log barvalue to see the progress
+          <animated.progress
+            className="progress progress-accent w-full max-w-xs justify-center items-center"
+            value={barvalue.percent}
+            max="100"
+          ></animated.progress>
         )}
       </div>
     </main>
