@@ -375,7 +375,7 @@ func DynamicTimeoutMiddleware(next http.Handler) http.Handler {
 }
 
 func timeoutFromLength(length int64) time.Duration {
-	transferSpeed := 500 * KiB         // Set timeout based on 500kbps connection
+	transferSpeed := 500 * (KiB / 8)   // Set timeout based on 500kbps connection (KiB is byte so we need to divide by 8 to get the speed in bits per second, not bits per byte, as length)
 	minimumDuration := 5 * time.Second // A minimum timeout duration in case there was no body
 	return time.Duration(length/int64(transferSpeed))*time.Second + minimumDuration
 }
