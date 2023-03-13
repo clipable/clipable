@@ -55,8 +55,11 @@ View the [features](https://github.com/clipable/clipable/blob/master/README.md#f
 
 <h2><img height="20" src="./.assets/icon.png">&nbsp;&nbsp;Run using Docker</h2>  
 
-Getting started is easy with Docker!  
- You can start by copying our [docker-compose.yml](https://github.com/clipable/clipable/blob/master/docker-compose.yml) and simply run `docker compose up -d`. The site will then be accessible at http://localhost/. If you plan on accessing it from a seperate URL, it's important to set the `COOKIE_DOMAIN` to that domain. You can view documentation about all of our environment variables [here.](https://github.com/clipable/clipable/wiki/Environment-Variables)
+Getting started is easy with Docker! We have a fully configured [docker-compose.yml](https://github.com/clipable/clipable/blob/master/docker-compose.yml)  
+ - Simply copy it and run `docker compose up -d`.  
+ - The site will then be accessible at http://localhost/.  
+ - If you plan on accessing it from a seperate URL, it's important to set the `COOKIE_DOMAIN` to that domain.  
+ - You can also view documentation about all of our environment variables [here.](https://github.com/clipable/clipable/wiki/Environment-Variables)
 <h2><img height="20" src="./.assets/icon.png">&nbsp;&nbsp;Contributing</h2>
  TODO
 
