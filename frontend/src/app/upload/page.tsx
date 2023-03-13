@@ -189,9 +189,6 @@ export default function Home() {
         <button className="btn btn-primary w-full max-w-xs" onClick={uploadVideo}>
           {messageBasedOnState(state)}
         </button>
-        {state !== State.Idle && (
-          <progress className="progress progress-accent w-full max-w-xs" value={progress} max="100" />
-        )}
       </div>
       <div className="flex flex-col space-y-6 justify-center items-center py-3">
       {state !== State.Idle && (

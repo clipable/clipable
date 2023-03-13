@@ -65,7 +65,7 @@ export default function Page({ params }: { params: { id: string } }) {
       <div className="w-fit mx-auto">
         <ReactShakaPlayer onLoad={(player) => setMainPlayer(player)} uiConfig={{
           'overflowMenuButtons': ['picture_in_picture', 'playback_rate', 'quality'],
-          'controlPanelElements': ['play_pause', 'current_time', 'time_and_duration', 'mute', 'volume', 'spacer', 'overflow_menu', 'fullscreen',]
+          'controlPanelElements': ['play_pause','time_and_duration', 'mute', 'volume', 'spacer', 'overflow_menu', 'fullscreen',]
         }} autoPlay />
       </div>
       {videoDetails && (
