@@ -1,18 +1,18 @@
 "use client";
 
 import clsx from "clsx";
-import { Video } from "@/shared/api";
+import { Clip } from "@/shared/api";
 import { formatViewsCount } from "./views-formatter";
 import { formatDate } from "./date-formatter";
-import VideoCardImage from "./video-card-image";
+import ClipCardImage from "./clip-card-image";
 import Link from "next/link";
 
 interface Props {
-  video: Video;
+  video: Clip;
   progress?: number;
 }
 
-export default function VideoCard({ video, progress }: Props) {
+export default function ClipCard({ video, progress }: Props) {
   const figureClassname = clsx({
     "flex-auto grow self-center pt-8 glass w-full h-full": video.processing,
   });
@@ -25,7 +25,7 @@ export default function VideoCard({ video, progress }: Props) {
   return (
     <div className="card card-compact w-96 h-full bg-base-100 min-w-[28rem] min-h-[20rem]">
       <figure className={figureClassname}>
-        <VideoCardImage video={video} progress={progress} />
+        <ClipCardImage video={video} progress={progress} />
       </figure>
       <div
         className={cardBodyClassname}
@@ -54,6 +54,7 @@ export default function VideoCard({ video, progress }: Props) {
             <p className="text-sm">•</p>
             <p>{formatDate(video.created_at)}</p>
           </div>
+          {video.unlisted && <div className="badge badge-outline mt-1">unlisted</div>}
         </div>
       </div>
     </div>

@@ -28,6 +28,7 @@ type Clip struct {
 	CreatedAt   time.Time   `validate:"-"                  in:"-"           out:"created_at"           `
 	CreatorID   HashID      `validate:"-"                  in:"-"           out:"-"                    `
 	Processing  bool        `validate:"-"                  in:"-"           out:"processing"           `
+	Unlisted    null.Bool   `validate:"-"                  in:"unlisted"    out:"unlisted"             `
 	Views       int64       `validate:"-"                  in:"-"           out:"views"                `
 
 	Creator *User `validate:"-" in:"-" out:"creator"`
@@ -42,6 +43,7 @@ func (u *Clip) ToModel() *models.Clip {
 		CreatedAt:   u.CreatedAt,
 		CreatorID:   int64(u.CreatorID),
 		Processing:  u.Processing,
+		Unlisted:    u.Unlisted.Bool,
 		Views:       u.Views,
 	}
 }
@@ -74,6 +76,10 @@ func (u *Clip) GetUpdateWhitelist() []string {
 		nonNullFields = append(nonNullFields, models.ClipColumns.CreatorID)
 	}
 
+	if u.Unlisted.Valid {
+		nonNullFields = append(nonNullFields, models.ClipColumns.Unlisted)
+	}
+
 	return nonNullFields
 }
 
@@ -86,6 +92,7 @@ func ClipFromModel(u *models.Clip) *Clip {
 		CreatedAt:   u.CreatedAt,
 		CreatorID:   HashID(u.CreatorID),
 		Processing:  u.Processing,
+		Unlisted:    null.BoolFrom(u.Unlisted),
 		Views:       u.Views,
 	}
 

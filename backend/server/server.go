@@ -2,6 +2,7 @@
 package server
 
 import (
+	"crypto/sha256"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/pbkdf2"
 
 	"github.com/golang-migrate/migrate/v4"
 	// Migrate Postgres driver import
@@ -49,6 +51,10 @@ func New(cfg *config.Config) (*Server, error) {
 		return nil, err
 	}
 
+	log.SetFormatter(&log.TextFormatter{
+		DisableQuote: true,
+	})
+
 	m, err := migrate.New(
 		"file://migrations",
 		fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable&x-multi-statement=true", cfg.DB.User, cfg.DB.Password, cfg.DB.Host, cfg.DB.Port, cfg.DB.Name),
@@ -67,14 +73,16 @@ func New(cfg *config.Config) (*Server, error) {
 
 	modelsx.SetHashEncoder(cfg.DB.IDHashKey)
 
-	cookieStore := sessions.NewCookieStore([]byte(cfg.Cookie.Key), []byte(cfg.Cookie.Key))
-	cookieStore.Options.SameSite = http.SameSiteLaxMode
+	keyHash := pbkdf2.Key([]byte(cfg.Cookie.Key), nil, 600_000, 32, sha256.New)
+
+	cookieStore := sessions.NewCookieStore(keyHash, keyHash)
+	cookieStore.Options.SameSite = http.SameSiteStrictMode
 	cookieStore.Options.Domain = cfg.Cookie.Domain
 	cookieStore.MaxAge(int((30 * (24 * time.Hour)).Seconds())) // 30 Days
 
 	s3, err := minio.New(cfg.S3.Address, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.S3.Access, cfg.S3.Secret, ""),
-		Secure: !cfg.Debug,
+		Secure: cfg.S3.Secure,
 	})
 
 	if err != nil {

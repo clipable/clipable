@@ -6,6 +6,7 @@ import (
 	"webserver/models"
 	"webserver/modelsx"
 
+	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
@@ -38,7 +39,7 @@ func (r *Routes) UpdateUser(user *models.User, req *http.Request) (int, []byte, 
 	model := updateUser.ToModel()
 
 	if err := r.Users.Update(req.Context(), model, boil.Whitelist(updateUser.GetUpdateWhitelist()...)); err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to update user")
 	}
 
 	return modelsx.UserFromModel(model).Marshal()
@@ -54,7 +55,7 @@ func (r *Routes) SearchUsers(user *models.User, req *http.Request) (int, []byte,
 	users, err := r.Users.SearchMany(req.Context(), req.URL.Query().Get("query"))
 
 	if err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to search users")
 	}
 
 	if len(users) == 0 {
@@ -77,7 +78,7 @@ func (r *Routes) GetUser(user *models.User, req *http.Request) (int, []byte, err
 	if err == sql.ErrNoRows {
 		return http.StatusNotFound, nil, nil
 	} else if err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to find user")
 	}
 
 	return modelsx.UserFromModel(targetUser).Marshal()
@@ -103,14 +104,14 @@ func (r *Routes) GetCurrentUser(user *models.User, req *http.Request) (int, []by
 func (r *Routes) GetUsersClips(user *models.User, req *http.Request) (int, []byte, error) {
 	vars := vars(req)
 
-	clips, err := r.Clips.FindMany(req.Context(), modelsx.NewBuilder().
+	clips, err := r.Clips.FindMany(req.Context(), user, modelsx.NewBuilder().
 		Add(models.ClipWhere.CreatorID.EQ(vars.UID)).
 		Add(getPaginationMods(req, models.ClipColumns.CreatedAt, models.TableNames.Clips, models.ClipColumns.ID)...,
 		)...,
 	)
 
 	if err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to find clips")
 	}
 
 	if len(clips) == 0 {
@@ -129,7 +130,7 @@ func (r *Routes) GetUsers(user *models.User, req *http.Request) (int, []byte, er
 	users, err := r.Users.FindMany(req.Context(), getPaginationMods(req, models.UserColumns.JoinedAt, models.TableNames.User, models.UserColumns.ID)...)
 
 	if err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "failed to find users")
 	}
 
 	if len(users) == 0 {

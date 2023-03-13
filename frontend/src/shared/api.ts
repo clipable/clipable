@@ -6,14 +6,15 @@ export interface User {
   joined_at: string;
 }
 
-export interface Video {
-  id: string;
-  title: string;
-  description?: string;
+export interface Clip {
   created_at: string;
   creator: User;
-  views: number;
+  description?: string;
+  id: string;
   processing: boolean;
+  title: string;
+  unlisted: boolean;
+  views: number;
 }
 
 export type ProgressObject = Record<string, number>;
@@ -23,7 +24,7 @@ export interface Progress {
 }
 
 // Client only
-export const getVideos = async (): Promise<Video[]> => {
+export const getClips = async (): Promise<Clip[]> => {
   const response = await fetch(`${API_URL}/clips`, {
     credentials: "include",
     headers: {
@@ -36,7 +37,7 @@ export const getVideos = async (): Promise<Video[]> => {
   return response.json();
 };
 
-export const getVideo = async (videoId: string): Promise<Video | null> => {
+export const getClip = async (videoId: string): Promise<Clip | null> => {
   const response = await fetch(`${API_URL}/clips/${videoId}`, {
     credentials: "include",
     headers: {
@@ -49,7 +50,19 @@ export const getVideo = async (videoId: string): Promise<Video | null> => {
   return response.json();
 };
 
-export const getUsersVideos = async (userId: string): Promise<Video[]> => {
+export const deleteCip = async (videoId: string): Promise<boolean> => {
+  const response = await fetch(`${API_URL}/clips/${videoId}`, {
+    credentials: "include",
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  return response.ok;
+};
+
+export const getUsersClips = async (userId: string): Promise<Clip[]> => {
   const response = await fetch(`${API_URL}/users/${userId}/clips`, {
     credentials: "include",
     headers: {
@@ -86,6 +99,13 @@ export const register = async (username: string, password: string): Promise<Resp
   return response;
 };
 
+export const registrationAllowed = async (): Promise<boolean> => {
+  const response = await fetch(`${API_URL}/auth/register`, {
+    method: "OPTIONS",
+  });
+  return response.ok;
+};
+
 export const login = async (username: string, password: string): Promise<boolean> => {
   const response = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
@@ -109,7 +129,7 @@ export const logout = async (): Promise<boolean> => {
   return response.ok;
 };
 
-export const searchVideos = async (query: string): Promise<Video[]> => {
+export const searchClips = async (query: string): Promise<Clip[]> => {
   const response = await fetch(`${API_URL}/clips/search?query=${query}`, {
     credentials: "include",
     headers: {
@@ -120,4 +140,27 @@ export const searchVideos = async (query: string): Promise<Video[]> => {
     return [];
   }
   return response.json();
-}
+};
+
+export const updateClipDetails = async (
+  videoId: string,
+  {
+    title,
+    description,
+    unlisted,
+  }: {
+    title: string;
+    description: string;
+    unlisted: boolean;
+  }
+): Promise<boolean> => {
+  const response = await fetch(`${API_URL}/clips/${videoId}`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ title, description, unlisted }),
+  });
+  return response.ok;
+};

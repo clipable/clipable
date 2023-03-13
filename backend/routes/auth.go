@@ -15,6 +15,14 @@ const SESSION_KEY_UID = "uid"
 const SESSION_KEY_OAUTH_STATE = "oauth-state"
 const SESSION_KEY_ID = "id"
 
+func (r *Routes) AllowRegistration(resp http.ResponseWriter, req *http.Request) (int, []byte, error) {
+	if !r.cfg.AllowRegistration {
+		return http.StatusForbidden, nil, nil
+	}
+
+	return http.StatusOK, nil, nil
+}
+
 func (r *Routes) Login(resp http.ResponseWriter, req *http.Request) (int, []byte, error) {
 	session, _ := r.store.Get(req, SESSION_NAME)
 
@@ -43,7 +51,9 @@ func (r *Routes) Login(resp http.ResponseWriter, req *http.Request) (int, []byte
 	}
 
 	session.Values[SESSION_KEY_ID] = user.ID
-	session.Save(req, resp)
+	if err := session.Save(req, resp); err != nil {
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "Failed to save session")
+	}
 
 	return modelsx.UserFromModel(user).Marshal()
 }
@@ -52,13 +62,20 @@ func (r *Routes) Logout(resp http.ResponseWriter, req *http.Request) (int, []byt
 	session, _ := r.store.Get(req, SESSION_NAME)
 
 	session.Options.MaxAge = -1
-	session.Save(req, resp)
-	resp.Header().Set("Clear-Site-Data", `"cookies", "storage"`)
+
+	if err := session.Save(req, resp); err != nil {
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "Failed to save session")
+	}
+
+	resp.Header().Set("Clear-Site-Data", `"cookies"`)
 
 	return http.StatusOK, nil, nil
 }
 
 func (r *Routes) Register(resp http.ResponseWriter, req *http.Request) (int, []byte, error) {
+	if !r.cfg.AllowRegistration {
+		return http.StatusForbidden, []byte("Registration is disabled"), nil
+	}
 
 	usr, err := modelsx.ParseUser(req, modelsx.UserValidateRegister)
 
@@ -93,7 +110,9 @@ func (r *Routes) Register(resp http.ResponseWriter, req *http.Request) (int, []b
 	session, _ := r.store.Get(req, SESSION_NAME)
 
 	session.Values[SESSION_KEY_ID] = model.ID
-	session.Save(req, resp)
+	if err := session.Save(req, resp); err != nil {
+		return http.StatusInternalServerError, nil, errors.Wrap(err, "Failed to save session")
+	}
 
 	return modelsx.UserFromModel(model).Marshal()
 }

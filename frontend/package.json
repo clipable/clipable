@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@babel/core": "^7.20.12",
+    "@heroicons/react": "^2.0.16",
     "@mkhuda/react-shaka-player": "^1.2.2",
     "@next/font": "13.1.6",
     "@types/node": "18.11.18",

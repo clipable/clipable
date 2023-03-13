@@ -16,6 +16,7 @@ type Config struct {
 	MetricsListenAddr  string `default:"127.0.0.1:9991"`
 	MaxUploadSize      string `default:"5 GB" split_words:"true"`
 	MaxUploadSizeBytes int64  `ignored:"true"` // This is set by the parser to the byte value of MaxUploadSize
+	AllowRegistration  bool   `default:"true" split_words:"true"`
 
 	FFmpeg struct {
 		Concurrency    int      `default:"1"`
@@ -37,6 +38,7 @@ type Config struct {
 
 	S3 struct {
 		Address string
+		Secure  bool `default:"false"`
 		Access  string
 		Secret  string
 		Bucket  string

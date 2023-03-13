@@ -39,24 +39,25 @@ services:
     image: ghcr.io/clipable/clipable:latest
     # All of these environment variables are documented here: https://github.com/clipable/clipable/wiki/Environment-Variables
     environment:
-      - DEBUG=true
-      - MAX_UPLOAD_SIZE=5GB
-      - FFMPEG_CONCURRENCY=1 
-      - FFMPEG_THREADS=0
-      - FFMPEG_PRESET=medium
-      - FFMPEG_TUNE=film
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_NAME=postgres
-      - DB_IDHASHKEY=mydbidkeythatishouldchange123
-      - COOKIE_KEY=mycookiekey12345
-      - COOKIE_DOMAIN=localhost
-      - S3_BUCKET=clips
-      - S3_ACCESS=minio
-      - S3_SECRET=myminiokeythatishouldchange123
-      - S3_ADDRESS=minio:9000
+      MAX_UPLOAD_SIZE: 5GB
+      FFMPEG_CONCURRENCY: 1 
+      FFMPEG_THREADS: 0
+      FFMPEG_PRESET: medium
+      FFMPEG_TUNE: film
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: postgres
+      DB_IDHASHKEY: mydbidkeythatishouldchange123
+      COOKIE_KEY: mycookiekey12345
+      COOKIE_DOMAIN: localhost
+      S3_BUCKET: clips
+      S3_ACCESS: minio
+      S3_SECRET: myminiokeythatishouldchange123
+      S3_ADDRESS: minio:9000
+      S3_SECURE: false
+
     ports:
       - 80:80
     depends_on:

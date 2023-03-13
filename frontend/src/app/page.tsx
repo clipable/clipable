@@ -1,24 +1,24 @@
 "use client";
 
-import { getVideos, Progress, Video, ProgressObject, searchVideos } from "@/shared/api";
-import VideoCard from "@/shared/video-card";
+import { getClips, Progress, Clip, ProgressObject, searchClips } from "@/shared/api";
+import ClipCard from "@/shared/clip-card";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function Home() {
-  const [videos, setVideos] = useState<Video[] | null>(null);
+  const [videos, setVideos] = useState<Clip[] | null>(null);
   const [videoProgresses, setVideoProgresses] = useState<ProgressObject>({});
 
   const params = useSearchParams();
 
   useEffect(() => {
     const getVids = async () => {
-      const vids = await getVideos();
+      const vids = await getClips();
       setVideos(vids);
     };
     const getSearchedVids = async () => {
-      const vids = await searchVideos(params.get("search") as string);
+      const vids = await searchClips(params.get("search") as string);
       setVideos(vids);
     };
     params.get("search") ? getSearchedVids() : getVids();
@@ -27,16 +27,33 @@ export default function Home() {
   useEffect(() => {
     if (!videos) return;
     const getProgress = async () => {
-      if (!videos.length) return;
+      // If there are no videos stop the interval
+      if (!videos.length) {
+        clearInterval(interval);
+        return;
+      }
+
+      // Get the ids of all videos that are still processing
       const inProgressVideoIds = videos
         .filter((video) => video.processing)
         .map((video) => video.id)
         .join("&cid=");
+
+      // If there are no videos in progress stop the interval
       if (!inProgressVideoIds) {
         clearInterval(interval);
         return;
       }
+
       const resp = await fetch(`/api/clips/progress?cid=` + inProgressVideoIds);
+
+      // If the request fails, we don't want to stop the interval
+      if (!resp.ok) {
+        return;
+      }
+
+      // If the server returns 204, there are no videos in progress anymore
+      // so we can stop the interval and set all videos to not processing
       if (resp.status === 204) {
         setVideos(
           videos.map((video) => {
@@ -45,12 +62,15 @@ export default function Home() {
         );
         clearInterval(interval);
         return;
-      } // No content (no videos in progress)
+      }
+
       const { clips } = (await resp.json()) as Progress;
       setVideos(
-        videos.map((video) => {
-          return { ...video, processing: video.processing && !!clips[video.id] };
-        })
+        videos
+          // If the clip progress is -2, it failed to encode, so we don't want to show it
+          .filter((video) => clips[video.id] !== -2)
+          // If the clip is still processing, but we don't have a progress value for it, set it to be done processing
+          .map((video) => ({ ...video, processing: video.processing && !!clips[video.id] }))
       );
       setVideoProgresses(clips);
     };
@@ -60,7 +80,7 @@ export default function Home() {
 
   return (
     <main className="h-full">
-      <div className="container mx-auto py-3">
+      <div className="flex justify-center py-3 mx-3">
         {videos?.length === 0 && (
           <div className="flex flex-col items-center justify-center w-full">
             <h1 className="text-4xl font-bold">No videos found</h1>
@@ -68,14 +88,14 @@ export default function Home() {
           </div>
         )}
         {videos && videos.length > 0 && (
-          <ul role="list" className="grid grid-cols-3 gap-24">
+          <ul role="list" className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-10 xl:gap-16 2xl:gap-24">
             {videos.map((video) => (
-              <li key={video.id}>
+              <li className="m-0" key={video.id}>
                 {video.processing ? (
-                  <VideoCard video={video} progress={videoProgresses[video.id]} />
+                  <ClipCard video={video} progress={videoProgresses[video.id]} />
                 ) : (
                   <Link href={`/clips/${video.id}`}>
-                    <VideoCard video={video} />
+                    <ClipCard video={video} />
                   </Link>
                 )}
               </li>

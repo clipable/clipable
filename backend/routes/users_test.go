@@ -379,7 +379,7 @@ func TestRoutes_GetUsersClips(t *testing.T) {
 			hasError: false,
 			group: &services.Group{
 				Clips: &mock.ClipsProvider{
-					FindManyHook: func(ctx context.Context, mods ...qm.QueryMod) (models.ClipSlice, error) {
+					FindManyHook: func(ctx context.Context, user *models.User, mods ...qm.QueryMod) (models.ClipSlice, error) {
 						return models.ClipSlice{&models.Clip{}}, nil
 					},
 				},
@@ -398,7 +398,7 @@ func TestRoutes_GetUsersClips(t *testing.T) {
 			hasError: true,
 			group: &services.Group{
 				Clips: &mock.ClipsProvider{
-					FindManyHook: func(ctx context.Context, mods ...qm.QueryMod) (models.ClipSlice, error) {
+					FindManyHook: func(ctx context.Context, user *models.User, mods ...qm.QueryMod) (models.ClipSlice, error) {
 						return nil, sql.ErrNoRows
 					},
 				},
@@ -414,7 +414,7 @@ func TestRoutes_GetUsersClips(t *testing.T) {
 			hasError: false,
 			group: &services.Group{
 				Clips: &mock.ClipsProvider{
-					FindManyHook: func(ctx context.Context, mods ...qm.QueryMod) (models.ClipSlice, error) {
+					FindManyHook: func(ctx context.Context, user *models.User, mods ...qm.QueryMod) (models.ClipSlice, error) {
 						return models.ClipSlice{}, nil
 					},
 				},

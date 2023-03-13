@@ -11,7 +11,6 @@ import (
 	"webserver/services/object"
 	"webserver/services/transcoder"
 
-	"github.com/gorilla/csrf"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -52,7 +51,6 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 	router.Use(r.ParseVars)
 	if !cfg.Debug {
 		router.Use(handlers.RecoveryHandler())
-		router.Use(csrf.Protect([]byte(cfg.Cookie.Key), csrf.Path("/api")))
 	}
 	api := router.PathPrefix("/api").Subrouter()
 
@@ -80,6 +78,7 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 	// AUTH ENDPOINTS
 	endpoint("/auth/login", r.ResponseHandler(r.Login), http.MethodPost)
 	endpoint("/auth/register", r.ResponseHandler(r.Register), http.MethodPost)
+	endpoint("/auth/register", r.ResponseHandler(r.AllowRegistration), http.MethodOptions)
 	endpoint("/auth/logout", r.ResponseHandler(r.Logout), http.MethodPost)
 
 	// USER ENDPOINTS

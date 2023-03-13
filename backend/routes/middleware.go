@@ -14,7 +14,6 @@ import (
 
 	"github.com/araddon/dateparse"
 	"github.com/dustin/go-humanize"
-	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -70,18 +69,13 @@ func (r *Routes) FullHandler(handler func(u *models.User, w http.ResponseWriter,
 
 			if err != nil {
 				log.WithError(err).Warnln("Failed to find user, old cookie?")
+				user = nil
 				delete(s.Values, SESSION_KEY_ID)
 				r.store.Save(req, resp, s)
 			}
 		}
 
 		code, body, headers, err := handler(user, resp, req)
-
-		// If the user did not send a CSRF token, send one back
-		// TODO: Validate that this is the most idiomatic way of handling CSRF tokens
-		if req.Header.Get("X-CSRF-Token") == "" {
-			resp.Header().Set("X-CSRF-Token", csrf.Token(req))
-		}
 
 		// If the handler returned headers, add them to the response
 		for k, v := range headers {

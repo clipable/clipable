@@ -23,9 +23,9 @@ RUN pnpm install -r --offline
 
 RUN pnpm build
 
-FROM ghcr.io/jrottenberg/ffmpeg:5-alpine
+FROM node:alpine
 
-RUN apk add --update --no-cache nodejs nginx
+RUN apk add --update --no-cache nginx
 
 ENV NODE_ENV production
 
@@ -38,6 +38,9 @@ COPY --from=frontend-builder /home/node/app/package.json ./package.json
 # Some things are not allowed (see https://github.com/vercel/next.js/issues/38119#issuecomment-1172099259)
 COPY --from=frontend-builder /home/node/app/.next/standalone ./
 COPY --from=frontend-builder /home/node/app/.next/static ./.next/static
+
+COPY --from=mwader/static-ffmpeg:6.0 /ffmpeg /usr/local/bin/
+COPY --from=mwader/static-ffmpeg:6.0 /ffprobe /usr/local/bin/
 
 COPY backend/migrations /migrations
 COPY ./nginx.conf /etc/nginx/nginx.conf
