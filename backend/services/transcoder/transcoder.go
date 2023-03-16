@@ -204,6 +204,8 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 	start := time.Now()
 
 	ffmpegArgs := []string{
+		"-hwaccel", "nvdec",
+		"-hwaccel_output_format", "cuda",
 		"-i", rawURL,
 		"-preset", t.cfg.FFmpeg.Preset,
 		"-tune", t.cfg.FFmpeg.Tune,
@@ -213,7 +215,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		"-g", strconv.Itoa(fps),
 		"-seg_duration", "2",
 		"-sc_threshold", "0",
-		"-c:v", "libx264",
+		"-c:v", "h264_nvenc",
 		"-pix_fmt", "yuv420p",
 		"-c:a", "aac",
 		"-b:a", "128k",

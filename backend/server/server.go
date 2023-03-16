@@ -4,7 +4,6 @@ package server
 import (
 	"crypto/sha256"
 	"database/sql"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"webserver/routes"
 
 	"github.com/gorilla/sessions"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/pbkdf2"
@@ -44,11 +44,11 @@ func New(cfg *config.Config) (*Server, error) {
 	db, err := sql.Open("pgx", fmt.Sprintf("dbname=%s host=%s port=%s user=%s password=%s sslmode=disable", cfg.DB.Name, cfg.DB.Host, cfg.DB.Port, cfg.DB.User, cfg.DB.Password))
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to open db connection")
 	}
 
 	if err := db.Ping(); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to ping db")
 	}
 
 	log.SetFormatter(&log.TextFormatter{
@@ -61,14 +61,14 @@ func New(cfg *config.Config) (*Server, error) {
 	)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create migrate object")
 	}
 
 	// Only uncomment this if you need to wipe the db
 	// fmt.Println(m.Force(2))
 	// fmt.Println(m.Down())
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to migrate db")
 	}
 
 	modelsx.SetHashEncoder(cfg.DB.IDHashKey)
@@ -86,7 +86,7 @@ func New(cfg *config.Config) (*Server, error) {
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create s3 client")
 	}
 
 	if s3.IsOffline() {
@@ -96,13 +96,13 @@ func New(cfg *config.Config) (*Server, error) {
 	group, err := routes.DefaultServiceGroup(cfg, db, s3)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create service group")
 	}
 
 	r, err := routes.New(cfg, group, cookieStore)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create routes")
 	}
 
 	return &Server{

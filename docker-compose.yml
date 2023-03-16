@@ -36,7 +36,14 @@ services:
       "
 
   clipable:
-    image: ghcr.io/clipable/clipable:latest
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    build:
+      context: .
+      dockerfile: gpu.Dockerfile
     # All of these environment variables are documented here: https://github.com/clipable/clipable/wiki/Environment-Variables
     environment:
       MAX_UPLOAD_SIZE: 5GB
