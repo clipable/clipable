@@ -158,6 +158,8 @@ func (t *transcoder) GetPresets(width int, height int, fps int, audioStreams int
 			"v:0",
 			"-s:v:"+strconv.Itoa(i),
 			fmt.Sprintf("%dx%d", preset.Width, preset.Height),
+			"-vf:"+strconv.Itoa(i),
+			fmt.Sprintf("scale=w=%d:h=%d:force_original_aspect_ratio=1,pad=%d:%d:(ow-iw)/2:(oh-ih)/2", preset.Width, preset.Height, preset.Width, preset.Height),
 			"-b:v:"+strconv.Itoa(i),
 			bitString(preset.Bitrate),
 			"-maxrate:"+strconv.Itoa(i),
