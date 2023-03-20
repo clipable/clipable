@@ -1,11 +1,3 @@
-# ffmpeg - http://ffmpeg.org/download.html
-#
-# From https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
-#
-# https://hub.docker.com/r/jrottenberg/ffmpeg/
-#
-#
-
 FROM    nvidia/cuda:11.4.1-devel-ubuntu20.04 AS devel-base
 
 ENV	    NVIDIA_DRIVER_CAPABILITIES compute,utility,video
