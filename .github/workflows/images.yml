@@ -25,7 +25,7 @@ jobs:
         with:
           github-push-secret: ${{secrets.GITHUB_TOKEN}}
           docker-image-name: clipable
-          docker-image-tag: {{ github.event.release.name }} # optional
+          docker-image-tag: ${{ github.event.release.name }} # optional
           dockerfile-path: ./Dockerfile # optional
           build-context: . # optional
           build-only: false # optional
@@ -43,7 +43,7 @@ jobs:
         with:
           github-push-secret: ${{secrets.GITHUB_TOKEN}}
           docker-image-name: clipable
-          docker-image-tag: gpu-{{ github.event.release.name }} # optional
+          docker-image-tag: gpu-${{ github.event.release.name }} # optional
           dockerfile-path: ./gpu.Dockerfile # optional
           build-context: . # optional
           build-only: false # optional
