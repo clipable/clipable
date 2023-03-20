@@ -52,14 +52,15 @@ func (c *clips) Exists(ctx context.Context, cid int64) (bool, error) {
 }
 
 func (c *clips) Delete(ctx context.Context, clip *models.Clip) error {
-	_, err := clip.Delete(ctx, c.db)
-	if err != nil {
+	if _, err := clip.Delete(ctx, c.db); err != nil {
 		return errors.Wrap(err, "failed to delete clip")
 	}
+
 	if err := c.os.DeleteObjects(ctx, clip.ID); err != nil {
 		return errors.Wrap(err, "failed to delete clip objects")
 	}
-	return err
+
+	return nil
 }
 
 func (c *clips) SearchMany(ctx context.Context, user *models.User, query string) (models.ClipSlice, error) {
@@ -92,7 +93,7 @@ func (c *clips) Create(ctx context.Context, clip *models.Clip, creator *models.U
 	tx, err := c.db.BeginTx(ctx, nil)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to begin transaction")
 	}
 
 	columns.Cols = append(columns.Cols, models.ClipColumns.CreatorID)
@@ -100,12 +101,12 @@ func (c *clips) Create(ctx context.Context, clip *models.Clip, creator *models.U
 
 	if err := clip.Insert(ctx, tx, columns); err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, errors.Wrap(err, "failed to insert clip")
 	}
 
 	if err := clip.SetCreator(ctx, tx, false, creator); err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, errors.Wrap(err, "failed to set clip creator")
 	}
 
 	return &clipTx{tx, clip, c.os, false}, nil
@@ -134,7 +135,7 @@ func (c *clipTx) Commit() error {
 func (c *clipTx) Rollback() error {
 	if !c.done {
 		if err := c.os.DeleteObject(context.Background(), c.clip.ID, "raw"); err != nil {
-			return err
+			return errors.Wrap(err, "failed to delete clip raw object")
 		}
 	}
 	return c.tx.Rollback()

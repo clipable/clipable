@@ -5,6 +5,7 @@ import (
 	"github.com/alexsasharegan/dotenv"
 	"github.com/dustin/go-humanize"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/pkg/errors"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -23,6 +24,7 @@ type Config struct {
 		Threads        int      `default:"0"`
 		Preset         string   `default:"medium"` // https://trac.ffmpeg.org/wiki/Encode/H.264#:~:text=preset%20and%20tune-,Preset,-A%20preset%20is
 		Tune           string   `default:"film"`   // https://trac.ffmpeg.org/wiki/Encode/H.264#:~:text=x264%20%2D%2Dfullhelp.-,Tune,-You%20can%20optionally
+		Codec          string   `default:"libx264"`
 		QualityPresets []string `split_words:"true" default:"640x360-30@1,854x480-30@2.5,1280x720-30@5,1920x1080-30@8,1920x1080-60@12,2560x1440-30@16,2560x1440-60@24,3840x2160-30@45,3840x2160-60@68,7680x4320-30@160,7680x4320-60@240"`
 	}
 
@@ -64,13 +66,13 @@ func New() (*Config, error) {
 	}
 
 	if err := envconfig.Process("", cfg); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to process config")
 	}
 
 	// Parse the human readable max upload size into bytes
 	maxUploadSizeBytes, err := humanize.ParseBytes(cfg.MaxUploadSize)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to parse max upload size")
 	}
 
 	cfg.MaxUploadSizeBytes = int64(maxUploadSizeBytes)

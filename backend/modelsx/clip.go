@@ -8,6 +8,7 @@ import (
 	"webserver/models"
 
 	. "github.com/docker/go-units"
+	"github.com/friendsofgo/errors"
 	"github.com/volatiletech/null/v8"
 )
 
@@ -108,13 +109,13 @@ func ParseClip(req io.Reader) (*Clip, error) {
 	data, err := io.ReadAll(io.LimitReader(req, 2*KB))
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to read request body")
 	}
 
 	a := &Clip{}
 
 	if err := ClipDeserialize.Unmarshal(data, a); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to parse request body")
 	}
 
 	if err := ClipValidate.Struct(a); err != nil {

@@ -152,15 +152,6 @@ func (t *transcoder) GetPresets(width int, height int, fps int, audioStreams int
 
 	ffmpegArgs := []string{"-aspect", aspectRatio}
 
-	// ffmpeg -hwaccel nvdec -hwaccel_output_format cuda -i http://127.0.0.1:12786/s3/36/raw 
-	// -filter_complex "
-	// [0:v]hwupload_cuda, scale_npp=w=360:h=640:interp_algo=lanczos [v0];
-	// [0:v]hwupload_cuda, scale_npp=w=480:h=854:interp_algo=lanczos [v1];
-	// [0:v]hwupload_cuda, scale_npp=w=720:h=1280:interp_algo=lanczos [v2];
-	// [0:v]hwupload_cuda, scale_npp=w=1080:h=1920:interp_algo=lanczos [v3];
-	// [0:v]hwupload_cuda, scale_npp=w=1080:h=1920:interp_algo=lanczos [v4]" -preset medium -tune film -keyint_min 60 -threads 0 -hls_playlist_type vod -g 60 -seg_duration 2 -sc_threshold 0 -c:v h264_nvenc -pix_fmt yuv420p -c:a aac -b:a 128k -ac 1 -ar 96000 -use_template 1 -use_timeline 1 -single_file 1 -x264opts no-scenecut -streaming 0 -movflags +faststart+dash+global_sidx -global_sidx 1 -utc_timing_url https://time.akamai.com/?iso -progress http://127.0.0.1:12786/progress/36 -aspect 9:16 -map "[v0]" -b:v:0 1.0M -maxrate:0 1.2M -bufsize:0 2.0M -r:v:0 30 -map "[v1]" -b:v:1 
-
-
 	for i, preset := range presets {
 		ffmpegArgs = append(ffmpegArgs,
 			"-map",
