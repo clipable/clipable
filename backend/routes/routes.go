@@ -11,6 +11,7 @@ import (
 	"webserver/services/object"
 	"webserver/services/transcoder"
 
+	"github.com/friendsofgo/errors"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -138,7 +139,7 @@ func DefaultServiceGroup(cfg *config.Config, sdb *sql.DB, s3 *minio.Client) (*se
 	group.Transcoder, err = transcoder.New(cfg, group)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create transcoder service")
 	}
 
 	return group, nil

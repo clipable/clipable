@@ -20,3 +20,30 @@ jobs:
           dockerfile-path: ./Dockerfile # optional
           build-context: . # optional
           build-only: false # optional
+      - uses: pmorelli92/github-container-registry-build-push@2.0.0
+        name: Build and Publish tagged image
+        with:
+          github-push-secret: ${{secrets.GITHUB_TOKEN}}
+          docker-image-name: clipable
+          docker-image-tag: {{ github.event.release.name }} # optional
+          dockerfile-path: ./Dockerfile # optional
+          build-context: . # optional
+          build-only: false # optional
+      - uses: pmorelli92/github-container-registry-build-push@2.0.0
+        name: Build and Publish latest gpu image
+        with:
+          github-push-secret: ${{secrets.GITHUB_TOKEN}}
+          docker-image-name: clipable
+          docker-image-tag: gpu-latest # optional
+          dockerfile-path: ./gpu.Dockerfile # optional
+          build-context: . # optional
+          build-only: false # optional
+      - uses: pmorelli92/github-container-registry-build-push@2.0.0
+        name: Build and Publish tagged gpu image
+        with:
+          github-push-secret: ${{secrets.GITHUB_TOKEN}}
+          docker-image-name: clipable
+          docker-image-tag: gpu-{{ github.event.release.name }} # optional
+          dockerfile-path: ./gpu.Dockerfile # optional
+          build-context: . # optional
+          build-only: false # optional

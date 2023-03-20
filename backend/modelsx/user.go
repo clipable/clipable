@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/pkg/errors"
 	"github.com/volatiletech/null/v8"
 
 	"webserver/models"
@@ -92,13 +93,13 @@ func ParseUser(req *http.Request, v *UserValidator) (*User, error) {
 	data, err := ioutil.ReadAll(req.Body)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to read request body")
 	}
 
 	a := &User{}
 
 	if err := UserDeserializeSelf.Unmarshal(data, a); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to unmarshal request body")
 	}
 
 	if v != nil {

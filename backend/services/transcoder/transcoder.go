@@ -213,7 +213,7 @@ func (t *transcoder) process(ctx context.Context, clip *models.Clip) {
 		"-g", strconv.Itoa(fps),
 		"-seg_duration", "2",
 		"-sc_threshold", "0",
-		"-c:v", "libx264",
+		"-c:v", t.cfg.FFmpeg.Codec,
 		"-pix_fmt", "yuv420p",
 		"-c:a", "aac",
 		"-b:a", "128k",

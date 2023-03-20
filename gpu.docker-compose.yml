@@ -34,15 +34,22 @@ services:
       /usr/bin/mc mb clipable/clips;
       exit 0;
       "
+
   clipable:
-    image: ghcr.io/clipable/clipable:latest
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    image: ghcr.io/clipable/clipable:gpu-latest
     # All of these environment variables are documented here: https://github.com/clipable/clipable/wiki/Environment-Variables
     environment:
       MAX_UPLOAD_SIZE: 5GB
       FFMPEG_CONCURRENCY: 1 
       FFMPEG_THREADS: 0
-      FFMPEG_PRESET: medium
-      FFMPEG_TUNE: film
+      FFMPEG_PRESET: p4
+      FFMPEG_TUNE: hq
+      FFMPEG_CODEC: h264_nvenc
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: postgres
