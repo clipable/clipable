@@ -5,6 +5,7 @@ import ClipCard from "@/shared/clip-card";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
+import Footer from "./footer";
 
 export default function Home() {
   const [videos, setVideos] = useState<Clip[] | null>(null);
@@ -102,6 +103,7 @@ export default function Home() {
             ))}
           </ul>
         )}
+        {Footer()}
       </div>
     </main>
   );
