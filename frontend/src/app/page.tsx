@@ -103,7 +103,6 @@ export default function Home() {
             ))}
           </ul>
         )}
-        {Footer()}
       </div>
     </main>
   );
