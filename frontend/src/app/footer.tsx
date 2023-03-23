@@ -9,7 +9,6 @@ export default function Footer() {
       <a href="https://github.com/clipable/clipable" target="_blank">
         <div className="text-blue-400"> &nbsp; Open Source on GitHub</div>
       </a>
-      .
     </footer>
   );
 }
