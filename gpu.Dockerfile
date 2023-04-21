@@ -660,11 +660,7 @@ COPY --from=frontend-builder /home/node/app/.next/static ./.next/static
 
 COPY backend/migrations ./migrations
 COPY ./nginx.conf /etc/nginx/nginx.conf
+COPY gpu.entrypoint.sh .
 COPY --from=backend-build /app/clipable .
 
-RUN curl https://raw.githubusercontent.com/keylase/nvidia-patch/master/patch.sh > /usr/local/bin/patch.sh && \
-        curl https://raw.githubusercontent.com/keylase/nvidia-patch/master/docker-entrypoint.sh > docker-entrypoint.sh && \
-        chmod +x /usr/local/bin/patch.sh && \
-        chmod +x docker-entrypoint.sh
-
-ENTRYPOINT ./docker-entrypoint.sh && ./clipable & node ./server.js & nginx -g "daemon off;"
+ENTRYPOINT ./gpu.entrypoint.sh
