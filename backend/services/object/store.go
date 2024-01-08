@@ -82,7 +82,8 @@ func (s *store) PutObject(ctx context.Context, cid int64, filename string, r io.
 
 	buffer := make([]byte, 16*MB)
 	parts := make([]minio.CopySrcOptions, int(math.Round(float64(s.cfg.MaxUploadSizeBytes)/float64(16*MB)))+1)
-	deletionObjects := make([]minio.ObjectInfo, len(parts))
+
+	defer s.DeleteObjects(ctx, cid, "raw")
 
 	for i := 0; i < len(parts); i++ {
 		if ctx.Err() != nil {
@@ -95,7 +96,6 @@ func (s *store) PutObject(ctx context.Context, cid int64, filename string, r io.
 
 		if n == 0 {
 			parts = parts[:i]
-			deletionObjects = deletionObjects[:i]
 			break
 		}
 
@@ -108,14 +108,8 @@ func (s *store) PutObject(ctx context.Context, cid int64, filename string, r io.
 			End:    int64(n),
 		}
 
-		upinf, err := s.s3.PutObject(ctx, s.cfg.S3.Bucket, nid, bytes.NewReader(buffer[:n]), int64(n), minio.PutObjectOptions{})
-		if err != nil {
+		if _, err = s.s3.PutObject(ctx, s.cfg.S3.Bucket, nid, bytes.NewReader(buffer[:n]), int64(n), minio.PutObjectOptions{}); err != nil {
 			return 0, err
-		}
-
-		deletionObjects[i] = minio.ObjectInfo{
-			Key:       upinf.Key,
-			VersionID: upinf.VersionID,
 		}
 	}
 
@@ -126,22 +120,6 @@ func (s *store) PutObject(ctx context.Context, cid int64, filename string, r io.
 
 	if err != nil {
 		return 0, err
-	}
-
-	deletionQueue := make(chan minio.ObjectInfo)
-
-	go func() {
-		for _, obj := range deletionObjects {
-			deletionQueue <- obj
-		}
-
-		close(deletionQueue)
-	}()
-
-	for r := range s.s3.RemoveObjects(ctx, s.cfg.S3.Bucket, deletionQueue, minio.RemoveObjectsOptions{}) {
-		if r.Err != nil {
-			return 0, r.Err
-		}
 	}
 
 	return final.Size, err
@@ -165,7 +143,7 @@ func (s *store) DeleteObject(ctx context.Context, cid int64, filename string) er
 	return s.s3.RemoveObject(ctx, s.cfg.S3.Bucket, fmt.Sprintf("%d/%s", cid, filename), minio.RemoveObjectOptions{})
 }
 
-func (s *store) DeleteObjects(ctx context.Context, cid int64) error {
+func (s *store) DeleteObjects(ctx context.Context, cid int64, path string) error {
 	objectsCh := make(chan minio.ObjectInfo)
 
 	// Send object names that are needed to be removed to objectsCh
@@ -173,7 +151,7 @@ func (s *store) DeleteObjects(ctx context.Context, cid int64) error {
 	go func() {
 		defer close(objectsCh)
 		// List all objects from a bucket-name with a matching prefix.
-		opts := minio.ListObjectsOptions{Prefix: strconv.FormatInt(cid, 10), Recursive: true}
+		opts := minio.ListObjectsOptions{Prefix: strconv.FormatInt(cid, 10) + path, Recursive: true}
 		for object := range s.s3.ListObjects(context.Background(), s.cfg.S3.Bucket, opts) {
 			if object.Err != nil {
 				log.WithError(object.Err).Error("failed to list object")

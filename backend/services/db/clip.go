@@ -56,7 +56,7 @@ func (c *clips) Delete(ctx context.Context, clip *models.Clip) error {
 		return errors.Wrap(err, "failed to delete clip")
 	}
 
-	if err := c.os.DeleteObjects(ctx, clip.ID); err != nil {
+	if err := c.os.DeleteObjects(ctx, clip.ID, ""); err != nil {
 		return errors.Wrap(err, "failed to delete clip objects")
 	}
 

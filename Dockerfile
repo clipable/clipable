@@ -7,21 +7,15 @@ WORKDIR /app
 COPY backend/ .
 RUN go build -o clipable
 
-FROM mitchpash/pnpm AS frontend-deps
-RUN apk add --no-cache libc6-compat
+FROM gplane/pnpm AS frontend-builder
 WORKDIR /home/node/app
 COPY frontend/pnpm-lock.yaml frontend/.npmr[c] ./
-
 RUN pnpm fetch
 
-FROM mitchpash/pnpm AS frontend-builder
-WORKDIR /home/node/app
-COPY --from=frontend-deps /home/node/app/node_modules ./node_modules
 COPY frontend/ .
-
 RUN pnpm install -r --offline
-
 RUN pnpm build
+
 
 FROM node:alpine
 
