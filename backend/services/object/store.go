@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"strconv"
 	"sync/atomic"
 	"webserver/config"
 	"webserver/services"
@@ -83,7 +82,7 @@ func (s *store) PutObject(ctx context.Context, cid int64, filename string, r io.
 	buffer := make([]byte, 16*MB)
 	parts := make([]minio.CopySrcOptions, int(math.Round(float64(s.cfg.MaxUploadSizeBytes)/float64(16*MB)))+1)
 
-	defer s.DeleteObjects(ctx, cid, "raw")
+	defer s.DeleteObjects(ctx, cid, filename+"-")
 
 	for i := 0; i < len(parts); i++ {
 		if ctx.Err() != nil {
@@ -151,7 +150,8 @@ func (s *store) DeleteObjects(ctx context.Context, cid int64, path string) error
 	go func() {
 		defer close(objectsCh)
 		// List all objects from a bucket-name with a matching prefix.
-		opts := minio.ListObjectsOptions{Prefix: strconv.FormatInt(cid, 10) + path, Recursive: true}
+		opts := minio.ListObjectsOptions{Prefix: fmt.Sprintf("%d/%s", cid, path), Recursive: true}
+
 		for object := range s.s3.ListObjects(context.Background(), s.cfg.S3.Bucket, opts) {
 			if object.Err != nil {
 				log.WithError(object.Err).Error("failed to list object")

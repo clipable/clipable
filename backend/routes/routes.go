@@ -18,6 +18,7 @@ import (
 	"github.com/minio/minio-go/v7"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/rs/cors"
+	"github.com/sirupsen/logrus"
 	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
 	"github.com/slok/go-http-metrics/middleware"
 	"github.com/slok/go-http-metrics/middleware/std"
@@ -43,12 +44,14 @@ func New(cfg *config.Config, g *services.Group, store sessions.Store) (*Routes, 
 		store:     store,
 	}
 
+	logrus.SetLevel(logrus.InfoLevel)
+
 	router := mux.NewRouter()
 	internalRouter := mux.NewRouter()
 
 	router.Use(DynamicTimeoutMiddleware)
-	router.Use(LoggingMiddleware)
-	internalRouter.Use(LoggingMiddleware)
+	router.Use(LoggingMiddleware(logrus.InfoLevel))
+	internalRouter.Use(LoggingMiddleware(logrus.DebugLevel))
 	router.Use(r.ParseVars)
 	if !cfg.Debug {
 		router.Use(handlers.RecoveryHandler())

@@ -300,33 +300,35 @@ func (lw *loggingResponseWriter) Unwrap() http.ResponseWriter {
 }
 
 // Middleware implement mux middleware interface
-func LoggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func LoggingMiddleware(level log.Level) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		entry := log.NewEntry(log.StandardLogger())
-		start := time.Now()
+			entry := log.NewEntry(log.StandardLogger())
+			start := time.Now()
 
-		if reqID := r.Header.Get("X-Request-Id"); reqID != "" {
-			entry = entry.WithField("requestId", reqID)
-		}
+			if reqID := r.Header.Get("X-Request-Id"); reqID != "" {
+				entry = entry.WithField("requestId", reqID)
+			}
 
-		if remoteAddr := realIP(r); remoteAddr != "" {
-			entry = entry.WithField("remoteAddr", remoteAddr)
-		}
+			if remoteAddr := realIP(r); remoteAddr != "" {
+				entry = entry.WithField("remoteAddr", remoteAddr)
+			}
 
-		lw := newLoggingResponseWriter(w)
-		next.ServeHTTP(lw, r)
+			lw := newLoggingResponseWriter(w)
+			next.ServeHTTP(lw, r)
 
-		latency := time.Since(start)
+			latency := time.Since(start)
 
-		entry.WithFields(log.Fields{
-			"status":  lw.statusCode,
-			"method":  r.Method,
-			"written": humanize.Bytes(lw.written),
-			"read":    humanize.Bytes(uint64(r.ContentLength)),
-			"took":    latency.Round(time.Millisecond),
-		}).Info(r.URL.Path)
-	})
+			entry.WithFields(log.Fields{
+				"status":  lw.statusCode,
+				"method":  r.Method,
+				"written": humanize.Bytes(lw.written),
+				"read":    humanize.Bytes(uint64(r.ContentLength)),
+				"took":    latency.Round(time.Millisecond),
+			}).Log(level, r.URL.Path)
+		})
+	}
 }
 
 type timeoutResponseWriter struct {
