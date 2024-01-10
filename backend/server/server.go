@@ -26,10 +26,9 @@ import (
 	// Postgres driver import
 	_ "github.com/jackc/pgx/v4/stdlib"
 
+	. "github.com/docker/go-units"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-
-	. "github.com/docker/go-units"
 )
 
 // Server objects contains private route and config details
@@ -122,10 +121,9 @@ func (s *Server) Start() error {
 	srv := &http.Server{
 		Addr:              s.cfg.ListenAddr,
 		Handler:           s.routes.Router,
-		ReadTimeout:       10 * time.Second,
+		ReadTimeout:       6 * time.Hour,
 		WriteTimeout:      10 * time.Second,
 		ReadHeaderTimeout: 5 * time.Second,
-		IdleTimeout:       30 * time.Second,
 		MaxHeaderBytes:    1 * MB,
 	}
 	return srv.ListenAndServe()
