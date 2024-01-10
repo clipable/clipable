@@ -151,6 +151,7 @@ func (s *store) DeleteObjects(ctx context.Context, cid int64, path string) error
 		defer close(objectsCh)
 		// List all objects from a bucket-name with a matching prefix.
 		opts := minio.ListObjectsOptions{Prefix: fmt.Sprintf("%d/%s", cid, path), Recursive: true}
+
 		for object := range s.s3.ListObjects(context.Background(), s.cfg.S3.Bucket, opts) {
 			if object.Err != nil {
 				log.WithError(object.Err).Error("failed to list object")
