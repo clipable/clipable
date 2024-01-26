@@ -3,6 +3,7 @@
 import { getClips, Progress, Clip, ProgressObject, searchClips } from "@/shared/api";
 import ClipCard from "@/shared/clip-card";
 import Link from "next/link";
+// @ts-ignore
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 
@@ -18,10 +19,10 @@ export default function Home() {
       setVideos(vids);
     };
     const getSearchedVids = async () => {
-      const vids = await searchClips(params.get("search") as string);
+      const vids = await searchClips(params?.get("search") as string);
       setVideos(vids);
     };
-    params.get("search") ? getSearchedVids() : getVids();
+    params?.get("search") ? getSearchedVids() : getVids();
   }, [params]);
 
   useEffect(() => {
@@ -84,7 +85,7 @@ export default function Home() {
         {videos?.length === 0 && (
           <div className="flex flex-col items-center justify-center w-full">
             <h1 className="text-4xl font-bold">No videos found</h1>
-            {params.get("search") && <p className="text-xl">Try searching for something else</p>}
+            {params?.get("search") && <p className="text-xl">Try searching for something else</p>}
           </div>
         )}
         {videos && videos.length > 0 && (
