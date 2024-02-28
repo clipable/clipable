@@ -62,6 +62,8 @@ services:
       S3_SECRET: myminiokeythatishouldchange123
       S3_ADDRESS: minio:9000
       S3_SECURE: false
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: all
     ports:
       - 80:80
     depends_on:

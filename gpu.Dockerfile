@@ -16,11 +16,11 @@ COPY frontend/ .
 RUN pnpm install -r --offline
 RUN pnpm build
 
-FROM ghcr.io/aperim/nvidia-cuda-ffmpeg:12.2.0-6.0-ubuntu22.04-0.3.5
+FROM ghcr.io/aperim/nvidia-cuda-ffmpeg:12.2.2-6.1.1-ubuntu22.04-0.3.6
 WORKDIR /clipable
 RUN apt update && apt install -y --no-install-recommends curl nginx && \
         curl -fsSL https://deb.nodesource.com/setup_21.x | bash - && \
-        apt install -y nodejs && \
+        apt install -y nodejs supervisor && \
         npm install pnpm
 
 ENV NODE_ENV production
@@ -39,5 +39,6 @@ COPY backend/migrations ./migrations
 COPY ./nginx.conf /etc/nginx/nginx.conf
 COPY gpu.entrypoint.sh .
 COPY --from=backend-build /app/clipable .
+COPY ./supervisord.conf /supervisord.conf
 
 ENTRYPOINT ./gpu.entrypoint.sh
