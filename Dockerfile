@@ -19,7 +19,8 @@ RUN pnpm build
 
 FROM node:alpine
 
-RUN apk add --update --no-cache nginx
+WORKDIR /clipable
+RUN apk add --update --no-cache nginx supervisor
 
 ENV NODE_ENV production
 
@@ -36,8 +37,9 @@ COPY --from=frontend-builder /home/node/app/.next/static ./.next/static
 COPY --from=mwader/static-ffmpeg:6.0 /ffmpeg /usr/local/bin/
 COPY --from=mwader/static-ffmpeg:6.0 /ffprobe /usr/local/bin/
 
-COPY backend/migrations /migrations
+COPY backend/migrations ./migrations
 COPY ./nginx.conf /etc/nginx/nginx.conf
-COPY --from=backend-build /app/clipable /
+COPY --from=backend-build /app/clipable ./
+COPY ./supervisord.conf ./supervisord.conf
 
-ENTRYPOINT /clipable & node server.js & nginx -g "daemon off;"
+ENTRYPOINT ["supervisord", "-c", "./supervisord.conf"]

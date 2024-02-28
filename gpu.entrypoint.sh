@@ -8,4 +8,4 @@ chmod +x docker-entrypoint.sh
 
 ./docker-entrypoint.sh
 
-./clipable & node ./server.js & nginx -g "daemon off;"
+supervisord -c /supervisord.conf
