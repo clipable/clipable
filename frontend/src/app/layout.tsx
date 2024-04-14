@@ -1,6 +1,7 @@
 import UserContext from "@/context/user-context";
 import "@/styles/globals.scss";
 import Header from "./header";
+import Footer from "./footer";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -14,6 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <UserContext>
           <Header />
           {children}
+          <Footer />
         </UserContext>
       </body>
     </html>
